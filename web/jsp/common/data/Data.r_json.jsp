@@ -7,7 +7,7 @@
 	import="java.sql.Types.*"
 	import="project.jun.dao.result.HoList"
 	import="project.jun.util.HoUtil"
-	import="com.ibatis.sqlmap.engine.mapping.result.MetaData"
+	import="org.apache.ibatis.metadata.result.MetaData"
 %><%@include file="/jsp/common/include/include.jsp"
 %><%
 	boolean scriptTag = false;
