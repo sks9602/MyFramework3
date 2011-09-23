@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:25 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BaseExcel">
+
+<!--//
+	엑셀을 다운로드할 파일명을 구한다.
+//-->
+<select id="getExcelFileInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT EXCEL_SEQ, FILE_NAME
+  FROM S_EXCEL_DOWNLOAD
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND EXCEL_SEQ  = #{EXCEL_SEQ}
+</select>
+
+<!--//
+	엑셀을 다운로드할 타이틀 정보를 구한다.
+//-->
+<select id="getExcelTitleList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT EXCEL_SEQ, ROW_SEQ, TITLE_SEQ, TITLE_NAME, COLSPAN, ROWSPAN, CELL_COLOR, FONT_COLOR, WEIGHT, WIDTH, ORDER_NO
+  FROM S_EXCEL_HEADER
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND EXCEL_SEQ    = #{EXCEL_SEQ}
+ ORDER BY ROW_SEQ, ORDER_NO
+</select>
+
+<!--//
+	엑셀을 다운로드할 데이터를 가져올 컬럼 정보를 구한다.
+//-->
+<select id="getExcelColumnList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT EXCEL_SEQ, DATA_SEQ, COLUMN_NAME, ORDER_NO 
+  FROM S_EXCEL_DATA
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND EXCEL_SEQ    = #{EXCEL_SEQ}
+ ORDER BY ORDER_NO
+</select>
+
+<!--//
+	엑셀을 업로드 정보를 조회한다.
+//-->
+<select id="getExcelUploadInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD, EXCEL_SEQ, TITLE_NM, UPLOAD_NAME, TABLE_NAME, START_ROW, LINK_ACTION, TABLE_WIDTH, SAVE_ACTION_FLAG, REFLECT_ACTION_FLAG
+  FROM S_EXCEL_UPLOAD
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND EXCEL_SEQ    = #{EXCEL_SEQ}
+</select>
+
+<!--//
+	반영되지 않은 자료 목록수 조회.
+//-->
+<select id="getNotReflectCntInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD, EXCEL_SEQ, OPERATOR_NO, TABLE_NAME, COUNT(EXCEL_ROW) NOT_REFLECT_CNT
+  FROM S_EXCEL_UPLOAD_DATA
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND EXCEL_SEQ    = #{EXCEL_SEQ}
+   AND OPERATOR_NO  = #{USER_EMPID}
+   AND TABLE_NAME   = #{TABLE_NAME}
+   AND LOAD_YN      = 'N'
+ GROUP BY COMPANY_CD, EXCEL_SEQ, OPERATOR_NO, TABLE_NAME
+</select>
+
+<!--//
+	엑셀을 업로드 컬럼 정보를 조회한다.
+//-->
+<select id="getExcelUploadColumnList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT /*+ INDEX_ASC (S_EXCEL_UPLOAD_COLUMN S_EXCEL_UPLOAD_COLUMN_PK) */ 
+       COMPANY_CD, EXCEL_SEQ, COLUMN_SEQ, COLUMN_NO, COLUMN_TITLE, COLUMN_NAME, CELL_NUM, CODE, TEMP_DATA, CODE_SQL, COL_APPEND, COL_WIDTH
+  FROM S_EXCEL_UPLOAD_COLUMN
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND EXCEL_SEQ    = #{EXCEL_SEQ}
+</select>
+
+
+<!--//
+	공통코드 목록을  조회한다.
+//-->
+<select id="getExcelCommonCodeList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT CT.UPCD, DECODE( EUC.CODE_USEDEF, 'USEDEF1', CT.USEDEF1, 
+                                         'USEDEF2', CT.USEDEF2, 
+                                         'USEDEF3', CT.USEDEF3, 
+                                         'USEDEF4', CT.USEDEF4, 
+                                         'USEDEF5', CT.USEDEF5,  CT.CODE ) CODE, CT.CODE_NM
+  FROM CODET CT, S_EXCEL_UPLOAD_COLUMN EUC
+WHERE CT.COMPANY_CD  = EUC.COMPANY_CD
+  AND CT.UPCD        = EUC.CODE
+  AND EUC.COMPANY_CD = #{COMPANY_CD}
+  AND EUC.EXCEL_SEQ  = #{EXCEL_SEQ}
+  AND CT.USE_YN = 'Y'
+</select>
+
+<!-- 
+업로드된 Excel data를 로드완료로 수정한다.
+ -->
+<update id="updateExcelLoadSuccess" parameterType="queryParameterMap">
+UPDATE S_EXCEL_UPLOAD_DATA SET
+       LOAD_YN    = 'Y', 
+       LOAD_DT    = SYSDATE
+ WHERE COMPANY_CD   = #{COMPANY_CD_ES}   
+   AND EXCEL_SEQ    = #{EXCEL_SEQ_ES}
+   AND OPERATOR_NO  = #{OPERATOR_NO_ES}
+   AND TABLE_NAME   = #{TABLE_NAME_ES}
+   AND EXCEL_ROW    = #{EXCEL_ROW_ES}
+</update>
+
+<!-- 
+업로드된 Excel data를 로드 오류로 수정한다.
+ -->
+<update id="updateExcelLoadFail" parameterType="queryParameterMap">
+UPDATE S_EXCEL_UPLOAD_DATA SET
+       ERR_MEMO   = #{ERR_MEMO}, 
+       ERR_DT     = SYSDATE
+ WHERE COMPANY_CD   = #{COMPANY_CD_ES}   
+   AND EXCEL_SEQ    = #{EXCEL_SEQ_ES}
+   AND OPERATOR_NO  = #{OPERATOR_NO_ES}
+   AND TABLE_NAME   = #{TABLE_NAME_ES}
+   AND EXCEL_ROW    = #{EXCEL_ROW_ES}
+</update>
+
+<!--//
+	엑셀템플릿 정보를 조회한다.
+//-->
+<select id="getExcelTemplete" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD ,EXCEL_SEQ ,TEMPLETE_NAME
+  FROM S_EXCEL_TEMPLETE
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND EXCEL_SEQ    = #{EXCEL_SEQ}
+</select>
+
+
+<!--//
+	엑셀템플릿DATA 정보를 조회한다.
+//-->
+<select id="getExcelTempleteDataList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD ,EXCEL_SEQ ,ROW_NUM ,CELL_NUM ,CELL_DATA ,MERGED_T ,MERGED_B ,MERGED_L ,MERGED_R ,WIDTH ,HEIGHT, STYLE_GBN
+  FROM S_EXCEL_TEMPLETE_INFO
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND EXCEL_SEQ    = #{EXCEL_SEQ}
+</select>
+
+
+</mapper>

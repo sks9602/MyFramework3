@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:26 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Login">
+
+<select id="selectUserInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HU.COMPANY_CD COMPANY_CD, HU.MEMBER_NO USER_EMPID, HU.NAME USER_EMP_NAME, 'KR' COUNTRY,
+       'B' SYSTEM_CD, DEPT_NAME  DEPT_NM, NOTE NEED_SSO_TRAY, '' RANK_NAME, 'ky.hyun@samsung.com' EMAIL,
+       'ko' LANGUAGE_CD, nvl((SELECT EPID FROM V_HR_MEMBER WHERE COMPANY_CD = HU.COMPANY_CD AND MEMBER_NO = HU.MEMBER_NO ),'TEST') EPID
+  FROM HR_USER HU
+ WHERE HU.COMPANY_CD   = #{COMPANY_CD}
+   AND HU.MEMBER_NO    = #{MEMBER_NO}
+   AND HU.USE_YN       = 'Y'
+</select>
+
+<!--  임직원 운영자 조회 -->
+<select id="selectUserEP" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HU.COMPANY_CD COMPANY_CD, HU.MEMBER_NO USER_EMPID, HU.NAME USER_EMP_NAME, 'KR' COUNTRY,
+       'B' SYSTEM_CD, HM.DEPT_NAME  DEPT_NM, 'Y' NEED_SSO_TRAY, HM.RANK_NAME, HM.EMAIL EMAIL,
+       'ko' LANGUAGE_CD, HM.EPID EPID
+  FROM HR_USER HU, V_HR_MEMBER HM
+ WHERE HU.COMPANY_CD   IN (SELECT COMPANY_CD FROM HR_CLIENT)
+   AND HU.MEMBER_NO    = HM.MEMBER_NO
+   AND HU.COMPANY_CD   = HM.COMPANY_CD
+<if test="NID != ''">
+   AND HM.RESNO        = #{NID}
+</if>
+   AND HU.USE_YN       = 'Y'
+   AND HM.USE_YN       = 'Y'
+</select>
+
+<select id="selectJoBanjangAuth" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT DECODE(COUNT(DECODE(USE_GROUP, 'C01', 1)), COUNT(*), 'Y', 'N') IS_ONLY_JO_BANJANG
+  FROM S_USER_USERGRP
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND MEMBER_NO  = #{USER_EMPID}
+</select>
+
+<select id="selectUserAdmin" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD COMPANY_CD, 'ADMIN' USER_EMPID, '운영자' USER_EMP_NAME, DECODE(CTRY_CD, 'zh', 'ZH', 'en', 'EN', 'KR') COUNTRY,
+       'O' SYSTEM_CD, DECODE(CORP_CD, 'KR', 'S', CORP_CD) ENDGBN, #{COMPANY_CD} LOCATECD, 
+       DECODE( #{COMPANY_CD}, 'KR', 'C400Z', 'A01', 'W10000', 'A02', 'TJSEM', 'A03', 'STEM', 'A04', 'SEMTHAI', 'A05', 'SEMPHIL') DEPT_CD, 
+       DECODE( #{COMPANY_CD}, 'KR', '삼성전기', 'A01', '？莞三星？机', 'A02', 'TJSEM', 'A03', '三星高新？机', 'A04', 'SEMTHAI', 'A05', 'SEMPHIL') DEPT_NM, 
+       CTRY_CD LANGUAGE_CD
+  FROM HHRMEDUOP00_T
+ WHERE HRD_COMPANY_CD = #{COMPANY_CD}||'_HRD'
+   AND ROWNUM = 1
+</select>
+
+<select id="selectDataAuth" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT NVL(MIN(DATA_AUTH),6) DATA_AUTH
+  FROM S_USER_USERGRP UU, USERGRP_MENU UM
+ WHERE UU.COMPANY_CD = UM.COMPANY_CD
+   AND UU.USE_GROUP  = UM.USE_GROUP
+   AND UU.COMPANY_CD = #{COMPANY_CD}
+   AND UU.MEMBER_NO  = #{USER_EMPID}
+</select>   
+   
+<select id="selectSearchDept" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT DEPTCD, DEPTNM, DEPTPOSNO
+  FROM (	
+  <if test="DATA_AUTH &lt; 6">
+SELECT DEPTCD, DEPTNM, DEPTPOSNO
+    FROM (SELECT *
+            FROM HHRMEDUDEPT02_T HO2T
+           WHERE COMPCD = 'C40'
+             AND ENDGBN = #{ENDGBN}
+             AND (HO2T.COMPCD, HO2T.ENDGBN, HO2T.ORGID)
+          	      IN (SELECT COMPCD, ENDGBN, ORGID
+          	           FROM HHRMEDUDEPT01_T
+          	          WHERE CURORGYN = 'Y') ) H02T
+           WHERE COMPCD = 'C40'
+             AND ENDGBN = #{ENDGBN}
+             AND DEPTLVL  &gt;=  #{DATA_AUTH}
+                 START WITH   COMPCD = 'C40' AND  ENDGBN = #{ENDGBN}  AND DEPTCD = #{DEPTCD}
+                CONNECT BY PRIOR PARENTDEPTCD = DEPTCD AND COMPCD = 'C40' AND ENDGBN = #{ENDGBN}
+	</if>
+	
+SELECT DEPTCD, DEPTNM, DEPTPOSNO
+          FROM (SELECT *
+                  FROM HHRMEDUDEPT02_T HO2T
+                 WHERE COMPCD = 'C40'
+                   AND ENDGBN = #{ENDGBN}
+                   AND (HO2T.COMPCD, HO2T.ENDGBN, HO2T.ORGID)
+                	      IN (SELECT COMPCD, ENDGBN, ORGID
+                	           FROM HHRMEDUDEPT01_T
+                	          WHERE CURORGYN = 'Y') ) H02T
+                 WHERE COMPCD = 'C40'
+                   AND DEPTPOSNO  IN (SELECT DEPT_POSNO
+                                        FROM USER_AUTH_DEPT
+                                       WHERE COMPANY_CD = #{COMPANY_CD}
+                                         AND MEMBER_NO  = #{USER_EMPID} )
+	
+         ORDER BY DEPTPOSNO ) 
+ WHERE ROWNUM = 1
+
+</select>  
+
+<update id="forceInsertLog" parameterType="queryParameterMap">
+INSERT INTO HR_LOG ( COMPANY_CD   , 
+                     MEMBER_NO    , 
+                     LOGIN_DT     , 
+                     LOGIN_CODE   , 
+                     IP           , 
+                     BROWSER_MEMO , 
+                     REGI_DT      , 
+                     REGI_NO      , 
+                     MODI_DT      , 
+                     MODI_NO      )
+           VALUES   (#{COMPANY_CD}  , 
+                     #{USER_EMPID}   , 
+                     SYSDATE    , 
+                     #{SYSTEM_CD}  , 
+                     #{IP}          , 
+                     #{BROWSER_MEMO} , 
+                     SYSDATE       , 
+                     #{USER_EMPID}  , 
+                     SYSDATE       , 
+                     #{USER_EMPID}  ) 
+</update>
+
+
+<!--  SCP고유 로그 테이블에 로그를 쌓는다. -->
+<update id="forceInsertSCPLoginLog" parameterType="queryParameterMap">
+INSERT INTO V_TB_AM_COM_SYSTEMLOG
+(SYSTEM_ID   , RESNO       , LOGIN_TIME  , USER_IP     , LOGOUT_TIME )
+SELECT 'ITII', RESNO       , SYSDATE     , #{IP}        , NULL        
+  FROM V_HR_MEMBER HM
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND MEMBER_NO  = #{USER_EMPID}     
+</update>
+</mapper>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:25 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FileUpload">
+
+<!--//
+	파일을 업로드 하기전에 파일그룹에 해당하는 파일을 지운다.
+//-->
+<update id="deleteFileGroup" parameterType="queryParameterMap">
+DELETE FROM HR_FILE_INFO
+WHERE  COMPANY_CD = #{COMPANY_CD}       -- '0000'
+  AND  FILEGRP_NO = #{FILEGRP_NO}       -- 2	
+</update>
+
+<!--//
+	파일을 업로드 하기전에 파일그룹에서 삭제된 파일을 지운다.
+//-->
+<update id="deleteFile" parameterType="queryParameterMap">
+DELETE FROM HR_FILE_INFO
+WHERE  COMPANY_CD = #{COMPANY_CD}       -- '0000'
+  AND  FILEGRP_NO = #{FILEGRP_NO}       -- 2	
+  AND  FILE_NO    = #{FILE_NO}          -- 2	
+  AND  FILE_NAME  = #{FILE_DELETED_FILENAME}          -- 2	
+</update>
+
+
+<!--//
+	파일을 업로드 하기전에 새로운 파일그룹의 MAX값을 구한다.
+//-->
+<select id="selectMaxFileGroupNo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT NVL(MAX(FILEGRP_NO),0)+1 AS FILEGRP_NO
+FROM   HR_FILE_INFO
+WHERE  COMPANY_CD = #{COMPANY_CD}
+</select>
+
+<!--//
+	파일을 등록한다.
+//-->
+<update id="insertAttachFile" parameterType="queryParameterMap">
+INSERT INTO HR_FILE_INFO(
+                           COMPANY_CD    /* 회사코드      */
+                          ,FILEGRP_NO    /* 파일그룹번호  */
+                          ,FILE_NO       /* 파일번호      */
+                          ,FILE_IDX
+                          ,FILE_NAME     /* 저장파일명    */
+                          ,FILE_SIZE     /* 파일사이즈    */
+                          ,FILE_PATH     /* 파일경로      */
+                          ,FILE_ORG_NAME /* 원본파일명    */
+                          ,REGI_NO       /* 등록자        */
+                          ,REGI_DT
+                         )
+                  VALUES(
+                           #{COMPANY_CD}             /* 회사코드      */
+                          ,#{FILEGRP_NO}             /* 파일그룹번호  */
+                          ,#{FILE_NO}
+                          ,(SELECT NVL(MAX(FILE_IDX),0)+1 FROM HR_FILE_INFO WHERE COMPANY_CD = #{COMPANY_CD} AND FILEGRP_NO = #{FILEGRP_NO} AND FILE_NO = #{FILE_NO})
+                          ,#{FILE_NAME}
+                          ,#{FILE_SIZE}             /* 파일사이즈    */
+                          ,#{FILE_PATH}             /* 파일경로      */             
+                          ,#{FILE_ORG_NAME}             /* 원본파일명    */
+                          ,#{USER_EMPID}             /* 등록자        */
+                          ,SYSDATE
+                         )
+
+</update>
+
+<!--//
+	파일을 목록을 구한다.
+//-->
+<select id="selectAttachFileList" parameterType="queryParameterMap" resultType="queryResultListMap">
+ SELECT COMPANY_CD
+ 	   ,FILEGRP_NO     /* 파일그룹번호 */
+       ,FILE_NO        /* 파일번호    */
+       ,FILE_IDX
+       ,FILE_PATH      /* 파일경로    */
+       ,FILE_SIZE      /* 파일사이즈  */
+       ,FILE_ORG_NAME  /* 원본파일명  */
+       ,FILE_NAME      /* 저장파일명  */
+FROM HR_FILE_INFO
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND FILEGRP_NO = #{FILEGRP_NO}
+</select>
+
+<!--//
+	첨부파일의  정보를 구한다.
+//-->
+<select id="selectAttachFileInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD, FILEGRP_NO, FILE_NO, FILE_SIZE, FILE_PATH, FILE_ORG_NAME, FILE_NAME--, TABLE_NAME
+  FROM HR_FILE_INFO
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND FILEGRP_NO = #{FILEGRP_NO}
+   AND FILE_NO    = #{FILE_NO}
+   AND FILE_IDX   = #{FILE_IDX}
+</select>
+</mapper>

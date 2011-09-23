@@ -1,0 +1,1 @@
+package project.jun.dao.result.handler;import org.apache.ibatis.metadata.result.MetaData;public class HoMetaDataHandler {	MetaData metaData = null;		public HoMetaDataHandler(MetaData metaData) {		this.metaData = metaData;	}		}

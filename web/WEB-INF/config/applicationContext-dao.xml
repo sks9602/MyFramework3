@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+"http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<import resource="./applicationContext-db.xml"/>
+	<import resource="./applicationContext-tx.xml"/>
+	<import resource="./applicationContext-aop.xml"/>
+	<import resource="./applicationContext-cache.xml"/>
+
+	<!-- 프로젝트에서 사용하는 메인 DB  -->
+	<bean id="ProjectDao" class="project.jun.dao.HoDaoImpl" singleton="false">
+		<property name="sqlSessionTemplate"><ref bean="projectSqlSessionReuseTemplate"/></property>
+		<property name="dataSource"><ref bean="projectDataSource"/></property>
+		<property name="cache">
+			<ref bean="ehcache"/>
+		</property>
+		<property name="cacheMap">
+			<map>
+				<entry key="CodeDAO.selectCodeListCombo"          value="GROUP_CODE"/>
+				<entry key="CodeDAO.selectSearchCodeListCombo"    value="GROUP_CODE"/>
+				<entry key="MainDAO.selectTableColumnList"        value="TABLE_NAME"/>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="proxyProjectDao" class="org.springframework.aop.framework.ProxyFactoryBean" singleton="false">
+		<property name="target">
+			<ref bean="ProjectDao"/>
+		</property>
+		<property name="proxyTargetClass" value="true"/>
+		<property name="interceptorNames">
+			<list>
+				<value>cacheAdvisor</value>
+				<value>preDAOLoggingAdvisor</value>
+				<value>postDAOLoggingAdvisor</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- SCHEME 정보를 얻기위한 DB -->
+	<bean id="DbDao" class="project.jun.dao.HoDaoImpl" singleton="false">
+		<property name="sqlSessionTemplate"><ref bean="dbSqlSessionBatchTemplate"/></property>
+		<property name="dataSource"><ref bean="dbDataSource"/></property>
+		<property name="cache">
+			<ref bean="ehcache"/>
+		</property>
+		<property name="cacheMap">
+			<map>
+				<entry key="CodeDAO.selectCodeListCombo"    value="GROUP_CODE"/>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="proxyDbDao" class="org.springframework.aop.framework.ProxyFactoryBean" singleton="false">
+		<property name="target">
+			<ref bean="DbDao"/>
+		</property>
+		<property name="proxyTargetClass" value="true"/>
+		<property name="interceptorNames">
+			<list>
+				<value>cacheAdvisor</value>
+				<value>preDAOLoggingAdvisor</value>
+				<value>postDAOLoggingAdvisor</value>
+			</list>
+		</property>
+	</bean>
+	
+	
+</beans>
+

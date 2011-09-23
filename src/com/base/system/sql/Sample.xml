@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:27 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Sample">
+
+<select id="selectListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT COUNT(*) CNT
+	  FROM HR_MEMBER
+     WHERE 1 = 1
+        <if test="S_MEMBER_NM_ES != null">  
+     	 AND  <foreach collection="S_MEMBER_NM_ES" index="index" item="S_MEMBER_NM_ES" separator=" OR " close=")" open="(">NAME LIKE '%'||#{S_MEMBER_NM_ES}||'%'</foreach>
+     	</if>
+		<if test="S_ENTER_START_DT != null"> AND ENTER_DT <![CDATA[>=]]> #{S_ENTER_START_DT}</if>
+		<if test="S_ENTER_END_DT !=  null"> AND ENTER_DT <![CDATA[<=]]> #{S_ENTER_END_DT}</if>
+</select>
+
+<select id="selectList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LIST.*
+  FROM (SELECT ROWNUM RNUM, SUB.*
+          FROM (SELECT *
+	              FROM HR_MEMBER
+                 WHERE 1 = 1
+        <if test="S_MEMBER_NM_ES != null">  
+     	 AND  <foreach collection="S_MEMBER_NM_ES" index="index"  item="S_MEMBER_NM_ES"  separator=" OR " close=")" open="(">NAME LIKE '%'||#{S_MEMBER_NM_ES}||'%'</foreach>
+     	</if>
+		<if test="S_ENTER_START_DT != null"> AND ENTER_DT  <![CDATA[>=]]> #{S_ENTER_START_DT}</if>
+		<if test="S_ENTER_END_DT != null"> AND ENTER_DT  <![CDATA[<=]]> #{S_ENTER_END_DT}</if>
+                ) SUB
+		 WHERE ROWNUM  <![CDATA[ < ]]>  #{ENDROWNUM,jdbcType=NUMERIC}
+      	) LIST
+ WHERE RNUM  <![CDATA[ > ]]> #{BEGINROWNUM,jdbcType=NUMERIC}
+</select>
+
+
+</mapper>

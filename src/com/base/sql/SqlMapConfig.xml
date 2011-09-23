@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:24 KST 2011-->
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD SQL Map Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration><settings>
+		<setting name="cacheEnabled" value="true"/>
+			<setting name="defaultExecutorType" value="REUSE"/>
+			<setting name="lazyLoadingEnabled" value="true"/>
+			<setting name="defaultStatementTimeout" value="1200"/>
+			</settings>
+	<typeAliases>
+		<typeAlias alias="queryParameterMap" type="project.jun.dao.parameter.HoQueryParameterMap"/>
+		<typeAlias alias="queryResultListMap" type="java.util.LinkedHashMap"/>
+		<typeAlias alias="queryResultMap" type="java.util.HashMap"/>
+		<typeAlias alias="callResultMap" type="project.jun.dao.parameter.HoQueryParameterMap"/>
+	</typeAliases>
+		
+	<mappers>
+		<mapper resource="/com/base/system/sql/Sample.xml"/>
+			<mapper resource="/com/base/system/sql/BaseExcel.xml"/>
+			<mapper resource="/com/base/system/sql/Combo.xml"/>
+			<mapper resource="/com/base/system/sql/CommonPopup.xml"/>
+			<mapper resource="/com/base/system/sql/FileUpload.xml"/>
+			<mapper resource="/com/base/system/sql/Login.xml"/>
+			<mapper resource="/com/base/system/sql/MainDAO.xml"/>
+			<mapper resource="/com/base/system/sql/MenuDAO.xml"/>
+			<mapper resource="/com/base/manage/auth/sql/BackB2c.xml"/>
+			<mapper resource="/com/base/manage/auth/sql/UserGroupSearch.xml"/>
+			<mapper resource="/com/base/manage/auth/sql/UserGroup.xml"/>
+			<mapper resource="/com/base/manage/auth/sql/UserGroupMenu.xml"/>
+			<mapper resource="/com/base/manage/board/sql/Board.xml"/>
+			<mapper resource="/com/base/manage/board/sql/BoardItem.xml"/>
+			<mapper resource="/com/base/manage/board/sql/BoardItemNew.xml"/>
+			<mapper resource="/com/base/manage/code/sql/Code.xml"/>
+			<mapper resource="/com/base/manage/common/sql/BasePopup.xml"/>
+			<mapper resource="/com/base/manage/program/sql/Button.xml"/>
+			<mapper resource="/com/base/manage/program/sql/MenuMng.xml"/>
+			<mapper resource="/com/base/manage/program/sql/Page.xml"/>
+			</mappers>
+	</configuration>

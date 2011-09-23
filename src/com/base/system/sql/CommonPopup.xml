@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:25 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CommonPopup">
+
+<!-- 회원수조회 -->
+<select id="selectMemberListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT COUNT(*) CNT
+	  FROM V_HR_MEMBER HM
+	 WHERE 1=1
+	   AND COMPANY_CD = #{COMPANY_CD}
+	 <if test="S_SITE != ''">
+	   AND HM.SITE = #{S_SITE}
+	 </if>
+	 <if test="MEMBER_NAME != ''">
+	   AND UPPER(REPLACE(HM.NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{MEMBER_NAME},' ',''))||'%'
+	 </if>
+</select>
+
+<!--  회원 조회 -->
+<select id="selectMemberList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.* ,
+		BB.MEMBER_NO CODE, BB.NAME NAME, #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG
+  FROM (
+	SELECT ROWNUM RN, AA.* FROM (
+		SELECT COMPANY_CD, MEMBER_NO, NAME, DEPT_CD, DEPT_NAME, RANK_CODE, RANK_NAME, JIKWI_CD, JIKWI_NM, EMAIL, TEL_NO1||'-'||TEL_NO2||'-'||TEL_NO3 TEL_NO
+		
+		  FROM V_HR_MEMBER HM
+		 WHERE 1=1
+		   AND COMPANY_CD = #{COMPANY_CD}
+		 <if test="S_SITE != ''">
+		   AND HM.SITE = #{S_SITE}
+		 </if>
+		 <if test="MEMBER_NAME != ''">
+		 	AND UPPER(REPLACE(HM.NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{MEMBER_NAME},' ',''))||'%'
+		 </if>
+		 <if test="SORT != ''">
+		 	ORDER BY ${SORT} ${DIR}
+		 </if>
+		 <if test="SORT == ''">
+		 	ORDER BY NAME
+		 </if>
+	) AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+) BB WHERE BB.RN  &gt;  #{BEGINROWNUM}
+</select>
+
+<!-- 회원정보조회. -->
+<select id="selectMemberInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD, MEMBER_NO, NAME, DEPT_CD, DEPT_NAME, RANK_CODE, RANK_NAME, JIKWI_CD, JIKWI_NM
+  FROM V_HR_MEMBER HM
+ WHERE 1=1
+   AND COMPANY_CD = #{COMPANY_CD}
+   AND MEMBER_NO  = #{MEMBER_NO}
+</select>
+
+<!-- 과정수 조회 -->
+<select id="selectCourseListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT
+  FROM V_HR_COURSE HC
+ WHERE COMPANY_CD = #{COMPANY_CD}    
+<if test="COURSE_CODE != ''">AND HC.COURSE_CODE = #{COURSE_CODE}</if>
+<if test="COURSE_NAME != ''">AND REPLACE(UPPER(HC.COURSE_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{COURSE_NAME}),' ','')||'%'</if>        
+</select>
+
+<!-- 과정조회 -->  
+<select id="selectCourseList" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+SELECT LIST.*,
+		LIST.COURSE_CODE CODE, LIST.COURSE_NAME NAME, #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG
+  FROM
+    (
+       SELECT ROWNUM RN, SUB.*
+         FROM
+             (
+                SELECT 
+						 COMPANY_CD					 --회사코드                
+						,COURSE_CODE                 --과정코드                
+						,COURSE_NAME                 --과정명                  
+						,COURSE_NAME_DTL             --과정명상세              
+						,PRODUCT_CODE                --PRODUCT코드             						         
+						,CLASSIFY_CD                 --분류코드                
+						,(SELECT CLASSIFY_NM
+                			FROM HR_COURSE_CLASSIFY
+                		   WHERE COMPANY_CD  = HC.COMPANY_CD
+                	   		 AND CLASSIFY_CD = HC.CLASSIFY_CODE3 ) CLASSIFY_CDNM   --과정분류명                
+						,CLASSIFY_CODE1              --과정대분류코드          
+						,CLASSIFY_CODE2              --과정중분류코드          
+						,CLASSIFY_CODE3              --과정소분류코드          
+						,COURSE_GBN                  --과정구분(소유권구분)
+						,F_CODE_NAME(COMPANY_CD,COURSE_GBN)AS COURSE_GBNNM   --과정구분명(소유권구분명)
+						,EDU_TYPE                    --교육형태                
+						,EDU_TIME                    --교육시간                
+						,COMEDU_TIME                 --교육인정시간            
+						,PERIOD                      --교육기간                
+						,PERIOD_GBN                  --교육기간구분
+						,COST_AMT					 --수강료            
+						,REFUND_YN                   --고용보험여부            
+						,REFUND_AMT1                 --대기업환급금액   						
+						,REFUND_AMT2                 --우선지원환급금액
+						,NVL(REFUND_AMT1 + REFUND_AMT2,0)AS REFUND_SUM --환급금액         
+						,USE_YN                      --사용여부                
+						,REGI_DT                     --등록일                  
+						,REGI_NO                     --등록자                  
+						,MODI_DT                     --수정일                  
+						,MODI_NO                     --수정자                  
+			  FROM V_HR_COURSE HC
+			 WHERE COMPANY_CD = #{COMPANY_CD}    			
+			<if test="COURSE_CODE != ''">AND HC.COURSE_CODE = #{COURSE_CODE}</if>
+			<if test="COURSE_NAME != ''">AND REPLACE(UPPER(HC.COURSE_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{COURSE_NAME}),' ','')||'%'</if>        
+			<if test="SORT != ''">
+				ORDER BY ${SORT} ${DIR}
+			</if>
+			<if test="SORT == ''">
+		 	ORDER BY COURSE_NAME
+			</if>
+             ) SUB
+       WHERE ROWNUM  &lt;  #{ENDROWNUM}
+     ) LIST
+WHERE RN  &gt;  #{BEGINROWNUM}
+              
+</select>
+
+<!-- 고객사 정보 조회 -->
+<select id="selectClientInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HBC.COMPANY_CD      , 
+	   HBC.CLIENT_CO_CODE  , 
+	   HBC.BIZ_HNAME       , 
+	   HBC.BIZ_ENAME       , 
+	   HBC.BIZ_NO
+  FROM HR_BIZ_CLIENT HBC
+ WHERE HBC.COMPANY_CD = #{COMPANY_CD}   
+   AND HBC.CLIENT_CO_CODE = #{CLIENT_CODE} 			
+</select>
+
+
+<!-- 고객사 수 조회 -->
+<select id="selectClientListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT
+  FROM HR_BIZ_CLIENT HBC
+ WHERE HBC.COMPANY_CD = #{COMPANY_CD}    			
+<if test="CLIENT_NAME != ''">AND HBC.BIZ_HNAME = #{CLIENT_NAME}</if>
+</select>
+
+<!-- 고객사목록  조회 -->
+<select id="selectClientList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.* ,
+		BB.CLIENT_CO_CODE CODE, BB.BIZ_HNAME NAME, #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG 
+  FROM (
+	SELECT ROWNUM RN, AA.*
+	  FROM (SELECT HBC.COMPANY_CD      , 
+					HBC.CLIENT_CO_CODE  , 
+					HBC.BIZ_HNAME       , 
+					HBC.BIZ_ENAME       , 
+					HBC.BIZ_NO           
+			  FROM HR_BIZ_CLIENT HBC
+			 WHERE HBC.COMPANY_CD = #{COMPANY_CD}    			
+			<if test="CLIENT_NAME != ''">AND REPLACE(UPPER(HBC.BIZ_HNAME),' ','') LIKE '%'|| REPLACE(UPPER(#{CLIENT_NAME}),' ','')||'%'</if>
+			<if test="SORT != ''">
+				ORDER BY ${SORT} ${DIR}
+			</if>
+			<if test="SORT == ''">
+				ORDER BY BIZ_HNAME
+			</if>
+	)AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+) BB WHERE BB.RN  &gt;  #{BEGINROWNUM}
+</select>
+
+<!-- 운영자 정보 조회 -->
+<select id="selectUserInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HU.COMPANY_CD
+      ,HU.MEMBER_NO
+      ,HU.NAME
+      ,HU.PWD
+      ,HU.USER_GBN
+      ,HU.COMPANY_NM
+      ,HU.DEPT_NAME
+      ,HU.JIKWI_NM
+      ,HU.TEL_NO1
+      ,HU.TEL_NO2
+      ,HU.TEL_NO3
+      ,HU.HANDPHONE1
+      ,HU.HANDPHONE2
+      ,HU.HANDPHONE3
+      ,HU.FAX1
+      ,HU.FAX2
+      ,HU.FAX3
+      ,HU.EMAIL
+      ,HU.NOTE
+      ,HU.USE_YN
+      ,HU.IP_ADDR
+      ,HU.LOGIN_DT
+      ,HU.REGI_DT
+      ,HU.REGI_NO
+      ,HU.MODI_DT
+      ,HU.MODI_NO
+  FROM HR_USER HU
+ WHERE HU.COMPANY_CD = #{COMPANY_CD}
+   AND HU.MEMBER_NO  = #{MEMBER_NO}
+</select>
+
+<!-- 운영자 수 조회 -->
+<select id="selectUserListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT
+  FROM HR_USER HU
+ WHERE HU.COMPANY_CD = #{COMPANY_CD}    			
+<if test="NAME != ''">AND HU.NAME = #{USER_NAME}</if>
+</select>
+
+<!-- 운영자 목록  조회 -->
+<select id="selectUserList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.*,
+		BB.MEMBER_NO CODE, BB.NAME NAME , #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG 
+  FROM (
+	SELECT ROWNUM RN, AA.*
+	  FROM (SELECT HU.COMPANY_CD
+			      ,HU.MEMBER_NO
+			      ,HU.NAME
+			      ,HU.PWD
+			      ,HU.USER_GBN
+			      ,HU.COMPANY_NM
+			      ,HU.DEPT_NAME
+			      ,HU.JIKWI_NM
+			      ,HU.TEL_NO1
+			      ,HU.TEL_NO2
+			      ,HU.TEL_NO3
+			      ,TEL_NO1||'-'||TEL_NO2||'-'||TEL_NO3 TEL_NO
+			      ,HU.HANDPHONE1
+			      ,HU.HANDPHONE2
+			      ,HU.HANDPHONE3
+			      ,HU.FAX1
+			      ,HU.FAX2
+			      ,HU.FAX3
+			      ,HU.EMAIL
+			      ,HU.NOTE
+			      ,HU.USE_YN
+			      ,HU.IP_ADDR
+			      ,HU.LOGIN_DT
+			  FROM HR_USER HU
+			 WHERE HU.COMPANY_CD = #{COMPANY_CD} 			
+			<if test="NAME != ''">AND REPLACE(UPPER(HU.NAMEE),' ','') LIKE '%'|| REPLACE(UPPER(#{USER_NAME}),' ','')||'%'</if>
+			<if test="SORT != ''">
+				ORDER BY ${SORT} ${DIR}
+			</if>
+			<if test="SORT == ''">
+				ORDER BY NAME
+			</if>
+	)AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+) BB WHERE BB.RN  &gt;  #{BEGINROWNUM}
+</select>
+
+<!-- 우편번호 정보 조회 -->
+<select id="selectZipcodeInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT VZC.ZIP_NO ,
+       VZC.SIDO   ,
+       VZC.GUGUN  ,
+       VZC.DONG   ,
+       VZC.BUNJI  ,
+       VZC.SEQ
+  FROM V_ZIP_CODE VZC
+ WHERE VZC.ZIP_NO = #{ZIP_NO}
+</select>
+
+<!-- 우편번호 목록 조회 -->
+<select id="selectZipcodeList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT ROWNUM RN,
+       VZC.ZIP_NO CODE,
+       VZC.SIDO||'도 '||VZC.GUGUN||' '||DONG||' '||VZC.BUNJI NAME,
+       SUBSTR(VZC.ZIP_NO,0,3)||'-'||SUBSTR(VZC.ZIP_NO,4) ZIP_NO ,
+       SUBSTR(VZC.ZIP_NO,0,3) ZIP1,
+       SUBSTR(VZC.ZIP_NO,4) ZIP2 ,
+       VZC.SIDO   ,
+       VZC.GUGUN  ,
+       VZC.DONG   ,
+       VZC.ADDRESS   ,
+       VZC.BUNJI  ,
+       VZC.SEQ, 
+       #{POPUP_GBN} POPUP_GBN, -- ExtJS Window Popup일 경우.
+       #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG 
+  FROM V_ZIP_CODE VZC
+ WHERE 1=1
+   AND REPLACE(UPPER(VZC.ADDRESS),' ','') LIKE '%'|| REPLACE(UPPER(#{ADDRESS}),' ','')||'%'
+</select>
+
+<!-- 부서수조회 -->
+<select id="selectDeptListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT COUNT(*) CNT
+	  FROM V_HR_DEPT HD
+	 WHERE 1=1
+	   AND COMPANY_CD = #{COMPANY_CD}
+	   AND USE_YN     = 'Y'
+	 <if test="DEPT_NAME != ''">
+	   AND UPPER(REPLACE(HD.DEPT_NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{DEPT_NAME},' ',''))||'%'
+	 </if>
+	 <if test="DEPT_LEVEL != ''">
+	 	AND HD.DEPT_LEVEL = #{DEPT_LEVEL}
+	 </if>
+	 <if test="DEPT_CD != ''">
+	 	AND UPPER(REPLACE(HD.DEPT_CD,' ','')) LIKE '%'||UPPER(REPLACE(#{DEPT_CD},' ',''))||'%'
+	 </if>
+</select>
+
+<!--  부서 조회 -->
+<select id="selectDeptList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.* ,
+		BB.DEPT_CD CODE, BB.DEPT_NAME NAME, #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG
+  FROM (
+	SELECT ROWNUM RN, AA.* FROM (
+		SELECT COMPANY_CD, DEPT_CD, DEPT_NAME, DEPT_MNG_NO, P_DEPT_CODE, DEPT_LEVEL, ORDER_NO
+		  FROM V_HR_DEPT HD
+		 WHERE 1=1
+		   AND COMPANY_CD = #{COMPANY_CD}
+	       AND USE_YN   = 'Y'
+		 <if test="DEPT_NAME != ''">
+		 	AND UPPER(REPLACE(HD.DEPT_NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{DEPT_NAME},' ',''))||'%'
+		 </if>
+		 <if test="DEPT_LEVEL != ''">
+		 	AND HD.DEPT_LEVEL = #{DEPT_LEVEL}
+		 </if>
+		 <if test="DEPT_CD != ''">
+		 	AND UPPER(REPLACE(HD.DEPT_CD,' ','')) LIKE '%'||UPPER(REPLACE(#{DEPT_CD},' ',''))||'%'
+		 </if>
+		 <if test="SORT != ''">
+		 	ORDER BY ${SORT} ${DIR}, DEPT_NAME, ORDER_NO
+		 </if>
+		 <if test="SORT == ''">
+		 	ORDER BY DEPT_NAME, ORDER_NO
+		 </if>
+	) AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+) BB WHERE BB.RN  &gt;  #{BEGINROWNUM}
+</select>
+
+
+<!-- 회원수조회 -->
+<select id="selectSingleMailMemberListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT COUNT(*) CNT
+	  FROM V_HR_MEMBER HM
+	 WHERE 1=1
+	   AND COMPANY_CD = #{COMPANY_CD}
+	   AND USE_YN     = 'Y'
+	 <if test="S_SITE != ''">
+	   AND HM.SITE = #{S_SITE}
+	 </if>
+	 <if test="MEMBER_NAME != ''">
+	   AND UPPER(REPLACE(HM.NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{MEMBER_NAME},' ',''))||'%'
+	 </if>
+</select>
+
+<!--  회원 조회 -->
+<select id="selectSingleMailMemberList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.*,
+       BB.RESNO||'|'||BB.NAME||'|'||BB.RANK_NAME||'|'||BB.DEPT_NAME||'|'||''||'|'||BB.EMAIL||'|'||BB.EPID CODE, #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG
+  FROM (
+	SELECT ROWNUM RN, AA.* FROM (
+		SELECT COMPANY_CD, MEMBER_NO, NAME, DEPT_CD, DEPT_NAME, RANK_CODE, RANK_NAME, 
+		       RESNO, JIKWI_CD, JIKWI_NM, EMAIL, NULL EPID
+		  FROM V_HR_MEMBER HM
+		 WHERE 1=1
+		   AND COMPANY_CD = #{COMPANY_CD}
+		   AND USE_YN     = 'Y'
+		 <if test="S_SITE != ''">
+		   AND HM.SITE = #{S_SITE}
+		 </if>
+		 <if test="MEMBER_NAME != ''">
+		 	AND UPPER(REPLACE(HM.NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{MEMBER_NAME},' ',''))||'%'
+		 </if>
+		 <if test="SORT != ''">
+		 	ORDER BY ${SORT} ${DIR}
+		 </if>
+		 <if test="SORT == ''">
+		 	ORDER BY NAME
+		 </if>
+	) AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+) BB WHERE BB.RN  &gt;  #{BEGINROWNUM}
+</select>
+
+</mapper>

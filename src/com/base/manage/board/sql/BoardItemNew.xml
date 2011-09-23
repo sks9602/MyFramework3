@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:22 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardItemNew">
+
+	<!-- 
+	<result property="CONTENT" column="CONTENT"  jdbcType="CLOB" javaType="java.lang.String" />
+	<result property="CONTENT" column="CONTENT" typeHandler="com.systemwiz.dao.util.WizOracleCLOBTypeHandler"/>
+	-->
+
+
+<!--//
+  게시판정보가져오기
+//-->
+<select id="selectBoardList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LIST.*
+FROM
+      (
+          SELECT ROWNUM RNUM, SUB.*
+          FROM (
+                   SELECT
+                           COMPANY_CD                                                   /* 회사코드        */
+                          ,BOARD_SEQ                                                    /* 게시판순번      */
+                          ,BOARD_TYPE                                                   /* 게시판형태      */
+                          ,BOARD_NAME                                                   /* 게시판명      */
+                          ,REPLY_YN                                                     /* 답글가능여부     */
+                          ,FILE_YN                                                      /* 첨부파일가능여부      */
+                          ,APPROVAL_YN                                                  /* 승인사용여부       */
+                          ,PERIOD_YN                                                    /* 게시기간사용여부      */
+                          ,RECOMMAND_YN                                                 /* 추천사용여부      */
+                          ,ADDITION_YN                                                  /* 댓글가능여부      */
+                          ,USEDEF_YN                                                    /* 사용자정의  사용여부   */
+                          ,IMGUSE_YN                                                    /* 이미지사용여부      */
+                          ,USE_YN                                                       /* 게시판형태      */
+                      FROM HR_BOARD
+                     WHERE COMPANY_CD = #{COMPANY_CD}
+                     <if test="BOARD_TYPE != ''">
+                       AND BOARD_TYPE = #{BOARD_TYPE}
+                      </if>
+                       AND UPPER (BOARD_NAME) LIKE '%' || UPPER (#{BOARD_NAME}) || '%'
+                       AND USE_YN = 'Y'
+                    ORDER BY BOARD_SEQ
+               ) SUB
+           WHERE ROWNUM  &lt;  #{ENDROWNUM} 
+       ) LIST
+WHERE RNUM  &gt;  #{BEGINROWNUM}
+</select>
+
+<!--//
+  게시판정보가져오기 count
+//-->
+<select id="selectBoardListCount" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT    /* 레코드 수 */
+FROM HR_BOARD
+WHERE COMPANY_CD = #{COMPANY_CD}
+  <if test="BOARD_TYPE != ''">
+  AND BOARD_TYPE = #{BOARD_TYPE}
+  </if>
+  AND UPPER (BOARD_NAME) LIKE '%' || UPPER (#{BOARD_NAME}) || '%'
+  AND USE_YN = 'Y'
+</select>
+
+
+<select id="selectBoard" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD 
+      ,BOARD_SEQ
+      ,BOARD_TYPE
+      ,BOARD_NAME
+      ,REPLY_YN
+      ,FILE_YN
+      ,APPROVAL_YN
+      ,PERIOD_YN
+      ,RECOMMAND_YN
+      ,ADDITION_YN
+      ,USEDEF_YN
+      ,IMGUSE_YN
+      ,USE_YN
+FROM HR_BOARD
+WHERE COMPANY_CD=#{COMPANY_CD}
+  AND BOARD_SEQ =#{BOARD_SEQ}
+</select>
+
+<select id="selectBoardItemList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LIST.*
+FROM
+      (
+          SELECT ROWNUM RNUM, SUB.*
+          FROM (
+                   SELECT
+                           COMPANY_CD                                                   /* 회사코드        */
+                          ,BOARD_SEQ                                                    /* 게시판순번      */
+                          ,ITEM_SEQ                                                     /* 게시물번호      */
+                          ,REPLY_SEQ                                                    /* 답글번호        */
+                          ,REPLY_ORDER                                                  /* 답글순서        */
+                          ,REPLY_LEVEL                                                  /* 답글레벨        */
+                          ,TITLE                                                        /* 제목            */
+                          ,WRITE_NM                                                     /* 작성자         */
+                          ,CONTENT                                                      /* 게시물내용      */
+                          ,IP_ADDR                                                      /* 아이피주소      */
+                          ,F_DATE_CHAR(START_YMD) AS START_YMD                          /* 시작일          */
+                          ,F_DATE_CHAR(END_YMD)   AS END_YMD                            /* 종료일          */
+                          ,NOTICE_YN                                                    /* 게시여부        */
+                          ,APPROVAL_YN                                                  /* 승인여부        */
+                          ,HTML_GBN                                                     /* HTML여부        */
+                          ,DECODE(FILEGRP_NO, NULL, NULL, 'Y') AS FILEGRP_NO            /* 첨부파일 여부   */
+                          ,VIEW_CNT                                                     /* 조회수          */
+                          ,RECOMMAND_CNT                                                /* 추천수          */
+                          ,POPUP_WIDTH                                                  /* 팝업가로          */
+                          ,POPUP_HEIGHT                                                 /* 팝업세로          */
+                          ,USEDEF1                                                      /* 사용자정의1   */
+                          ,USEDEF2                                                      /* 사용자정의2   */
+                          ,USEDEF3                                                      /* 사용자정의3   */
+                          ,USEDEF4                                                      /* 사용자정의4   */
+                          ,USEDEF5                                                      /* 사용자정의5   */
+                          ,REAL_WRITE_DT                                                /* 실제작성일      */
+                          ,F_MEMBER_NAME(COMPANY_CD, REGI_NO) AS REGI_NAME              /* 등록자 성명     */
+                          ,REGI_DT                                                      /* 등록일          */
+                          ,REGI_NO                                                      /* 등록자          */
+                          ,MODI_DT                                                      /* 수정일          */
+                          ,MODI_NO                                                      /* 수정자          */
+                    FROM HR_BOARD_ITEM
+                    WHERE COMPANY_CD = #{COMPANY_CD}
+                      AND BOARD_SEQ  = #{BOARD_SEQ}
+                      AND UPPER (TITLE) LIKE '%' || #{TITLE} || '%'
+                      <if test="VIEW_CNT != ''">
+                      AND VIEW_CNT &gt;= #{VIEW_CNT}
+                      </if>
+                    ORDER BY BOARD_SEQ DESC, REPLY_SEQ DESC, REPLY_ORDER ASC, REPLY_LEVEL
+               ) SUB
+           WHERE ROWNUM  &lt;  #{ENDROWNUM} 
+       ) LIST
+WHERE RNUM  &gt;  #{BEGINROWNUM}
+</select>
+
+<!--//
+//-->
+<select id="selectBoardItemListCount" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT    /* 레코드 수 */
+FROM HR_BOARD_ITEM
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND BOARD_SEQ = #{BOARD_SEQ}
+  AND UPPER (TITLE) LIKE '%' || UPPER (#{TITLE}) || '%'
+ <if test="VIEW_CNT != ''">
+ AND VIEW_CNT &gt;= #{VIEW_CNT}
+ </if>
+</select>
+
+<!--//
+//-->
+<select id="selectBoardItemInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT
+        COMPANY_CD                                                   /* 회사코드        */
+       ,BOARD_SEQ                                                    /* 게시판순번      */
+       ,ITEM_SEQ                                                     /* 게시물번호      */
+       ,REPLY_SEQ                                                    /* 답글번호        */
+       ,REPLY_ORDER                                                  /* 답글순서        */
+       ,REPLY_LEVEL                                                  /* 답글레벨        */
+       ,TITLE                                                        /* 제목            */
+       ,CONTENT                                                      /* 게시물내용      */
+       ,WRITE_NM                                                     /* 작성자         */
+       ,WRITE_ID                                                     /* 작성ID     */
+       ,IP_ADDR                                                      /* 아이피주소      */
+       ,START_YMD                                                    /* 시작일          */
+       ,END_YMD                                                      /* 종료일          */
+       ,NOTICE_YN                                                    /* 게시여부        */
+       ,APPROVAL_YN                                                  /* 승인여부        */
+       ,HTML_GBN                                                     /* HTML여부        */
+       ,FILEGRP_NO                                                   /* 파일그룹 번호   */
+       ,VIEW_CNT                                                     /* 조회수          */
+       ,RECOMMAND_CNT                                                /* 추천수          */
+       ,POPUP_WIDTH                                                  /* 팝업가로          */
+       ,POPUP_HEIGHT                                                 /* 팝업세로          */
+       ,USEDEF1                                                      /* 사용자정의1   */
+       ,USEDEF2                                                      /* 사용자정의2   */
+       ,USEDEF3                                                      /* 사용자정의3   */
+       ,USEDEF4                                                      /* 사용자정의4   */
+       ,USEDEF5                                                      /* 사용자정의5   */
+       ,REAL_WRITE_DT                                                /* 실제작성일      */
+       ,F_MEMBER_NAME(COMPANY_CD, REGI_NO) AS REGI_NAME              /* 등록자  성명    */
+	   ,EMAIL														 /* 메일	*/       
+       ,REGI_DT                                                      /* 등록일          */
+       ,REGI_NO                                                      /* 등록자          */
+       ,MODI_DT                                                      /* 수정일          */
+       ,MODI_NO                                                      /* 수정자          */
+FROM HR_BOARD_ITEM
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND BOARD_SEQ  = #{BOARD_SEQ}
+  AND ITEM_SEQ   = #{ITEM_SEQ}
+</select>
+
+<!--//
+	 max seq "getMaxBoardItemSeq"
+//-->
+<select id="selectMaxBoardItemSeq" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT NVL(MAX(ITEM_SEQ),0)+1 AS MAX_ITEM_SEQ
+  FROM HR_BOARD_ITEM
+ WHERE BOARD_SEQ = #{BOARD_SEQ}
+</select>
+
+
+<!--//
+	 마지막으로 들어간 seq 구하기
+//-->
+<select id="selectLastSeq" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT MAX(ITEM_SEQ) AS MAXSEQ
+  FROM HR_BOARD_ITEM
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND BOARD_SEQ = #{BOARD_SEQ}
+</select>
+
+
+<!--//
+	 
+//-->
+<update id="insertBoardItem" parameterType="queryParameterMap">
+INSERT INTO HR_BOARD_ITEM(
+                            COMPANY_CD          /* 회사코드        */
+                           ,BOARD_SEQ           /* 게시판순번      */
+                           ,ITEM_SEQ            /* 게시물번호      */
+                           ,REPLY_SEQ           /* 답글번호        */
+                           ,REPLY_ORDER         /* 답글순서        */
+                           ,REPLY_LEVEL         /* 답글레벨        */
+                           ,TITLE               /* 제목            */
+                           ,CONTENT             /* 게시물내용      */
+                           ,FILEGRP_NO          /* 파일그룹 번호   */
+                           ,VIEW_CNT            /* 조회수          */
+                           ,IP_ADDR             /* 아이피 */
+                           ,START_YMD           /* 게시시작일  */
+                           ,END_YMD             /* 게시종료일 */
+                           ,POPUP_WIDTH         /* 팝업가로 */
+                           ,POPUP_HEIGHT        /* 팝업세로  */                            
+                           ,USEDEF1             /* 사용자정의1  */                            
+                           ,USEDEF2             /* 사용자정의2  */                            
+                           ,USEDEF3             /* 사용자정의3  */                            
+                           ,USEDEF4             /* 사용자정의4  */                            
+                           ,USEDEF5             /* 사용자정의5  */                            
+                           ,WRITE_NM            /* 작성자         */
+                           ,WRITE_ID            /* 작성ID     */
+                           ,REGI_NO             /* 등록자          */
+                          )
+                    VALUES
+                          (
+                             #{COMPANY_CD}                  /* 회사코드        */
+                            ,#{BOARD_SEQ}                  /* 게시판순번      */
+                            ,NVL( (SELECT MAX(ITEM_SEQ) + 1
+                                     FROM HR_BOARD_ITEM
+                                   WHERE COMPANY_CD = #{COMPANY_CD}
+                                     AND BOARD_SEQ  = #{BOARD_SEQ}
+                                   )
+                            ,1)                 /* 게시물번호      */
+                             ,NVL( (SELECT MAX(ITEM_SEQ) + 1
+                                     FROM HR_BOARD_ITEM
+                                   WHERE COMPANY_CD = #{COMPANY_CD}
+                                     AND BOARD_SEQ  = #{BOARD_SEQ}
+                                   )
+                            ,1)                 /* 게시물번호      */
+                            ,#{REPLY_ORDER}                  /* 답글순서        */
+                            ,#{REPLY_LEVEL}                  /* 답글레벨        */
+                            ,#{TITLE}                  /* 제목            */
+                            ,#{CONTENT}                  /* 게시물내용      */
+                            ,#{FILEGRP_NO}                  /* 파일그룹 번호   */
+                            ,0                  /* 조회수          */
+                            ,#{IP_ADDR}                  /* 아이피         */
+                            ,#{START_YMD}                  /* 게시시작일         */
+                            ,#{END_YMD}                  /* 게시종료일         */
+                            ,#{POPUP_WIDTH}                  /* 팝업가로         */
+                            ,#{POPUP_HEIGHT}                  /* 팝업세로         */
+                            ,#{USEDEF1}                  /* 사용자정의1    */
+                            ,#{USEDEF2}                  /* 사용자정의2    */
+                            ,#{USEDEF3}                  /* 사용자정의3    */
+                            ,#{USEDEF4}                  /* 사용자정의4    */
+                            ,#{USEDEF5}                  /* 사용자정의5    */
+                            ,#{WRITE_NM}                  /* 작성자         */
+                            ,#{WRITE_ID}                  /* 작성ID     */
+                            ,#{USER_EMPID}                  /* 등록자          */
+                           )
+</update>
+
+<!--//
+	 
+//-->
+<update id="insertReplyBoardItem" parameterType="queryParameterMap">
+INSERT INTO HR_BOARD_ITEM(
+                            COMPANY_CD          /* 회사코드        */
+                           ,BOARD_SEQ           /* 게시판순번      */
+                           ,ITEM_SEQ            /* 게시물번호      */
+                           ,REPLY_SEQ           /* 답글번호        */
+                           ,REPLY_ORDER         /* 답글순서        */
+                           ,REPLY_LEVEL         /* 답글레벨        */
+                           ,TITLE               /* 제목            */
+                           ,CONTENT             /* 게시물내용      */
+                           ,FILEGRP_NO          /* 파일그룹 번호   */
+                           ,VIEW_CNT            /* 조회수          */
+                           ,IP_ADDR             /* 아이피 */
+                           ,START_YMD           /* 게시시작일  */
+                           ,END_YMD             /* 게시종료일 */
+                           ,POPUP_WIDTH         /* 팝업가로 */
+                           ,POPUP_HEIGHT        /* 팝업세로  */ 
+                           ,USEDEF1             /* 사용자정의1  */                            
+                           ,USEDEF2             /* 사용자정의2  */                            
+                           ,USEDEF3             /* 사용자정의3  */                            
+                           ,USEDEF4             /* 사용자정의4  */                            
+                           ,USEDEF5             /* 사용자정의5  */                              
+                           ,WRITE_NM            /* 작성자         */
+                           ,WRITE_ID            /* 작성ID     */
+                           ,REGI_NO             /* 등록자          */
+                          )
+                    VALUES
+                          (
+                             #{COMPANY_CD}                  /* 회사코드        */
+                            ,#{BOARD_SEQ}                  /* 게시판순번      */
+                            ,NVL( (SELECT MAX(ITEM_SEQ) + 1
+                                     FROM HR_BOARD_ITEM
+                                   WHERE COMPANY_CD = #{COMPANY_CD}
+                                     AND BOARD_SEQ  = #{BOARD_SEQ}
+                                   )
+                            ,1)                 /* 게시물번호      */
+                            ,#{REPLY_SEQ}                  /* 답글번호        */
+                            ,#{REPLY_ORDER}                  /* 답글순서        */
+                            ,#{REPLY_LEVEL}                  /* 답글레벨        */
+                            ,#{TITLE}                  /* 제목            */
+                            ,#{CONTENT}                  /* 게시물내용      */
+                            ,#{FILEGRP_NO}                  /* 파일그룹 번호   */
+                            ,0                  /* 조회수          */
+                            ,#{IP_ADDR}                  /* 아이피         */
+                            ,#{START_YMD}                  /* 게시시작일         */
+                            ,#{END_YMD}                  /* 게시종료일         */
+                            ,#{POPUP_WIDTH}                  /* 팝업가로         */
+                            ,#{POPUP_HEIGHT}                  /* 팝업세로         */
+                            ,#{USEDEF1}                  /* 사용자정의1    */
+                            ,#{USEDEF2}                  /* 사용자정의2    */
+                            ,#{USEDEF3}                  /* 사용자정의3    */
+                            ,#{USEDEF4}                  /* 사용자정의4    */
+                            ,#{USEDEF5}                  /* 사용자정의5    */
+                            ,#{WRITE_NM}                  /* 작성자         */
+                            ,#{WRITE_ID}                  /* 작성ID     */
+                            ,#{USER_EMPID}                  /* 등록자          */
+                           )
+</update>
+
+<!--//
+	 
+//-->
+<update id="updateBoardItem" parameterType="queryParameterMap">
+UPDATE HR_BOARD_ITEM
+            SET
+                TITLE          = #{TITLE}     /* 제목            */
+               ,CONTENT        = #{CONTENT}     /* 게시물내용      */
+               ,FILEGRP_NO     = #{FILEGRP_NO}     /* 파일그룹 번호   */
+               ,WRITE_NM       = #{WRITE_NM}     /* 작성자     */
+               ,IP_ADDR        = #{IP_ADDR}     /* 아이피     */
+               ,START_YMD      = #{START_YMD}     /* 게시시작일     */
+               ,END_YMD        = #{END_YMD}     /* 게시종료일     */
+               ,POPUP_WIDTH    = #{POPUP_WIDTH}     /* 팝업가로     */
+               ,POPUP_HEIGHT   = #{POPUP_HEIGHT}     /* 팝업세로     */
+               ,USEDEF1        = #{USEDEF1}     /* 사용자정의1  */
+               ,USEDEF2        = #{USEDEF2}     /* 사용자정의2  */
+               ,USEDEF3        = #{USEDEF3}     /* 사용자정의3  */
+               ,USEDEF4        = #{USEDEF4}     /* 사용자정의4  */
+               ,USEDEF5        = #{USEDEF5}     /* 사용자정의5  */
+               ,MODI_NO        = #{USER_EMPID}     /* 수정자          */
+               ,MODI_DT        = SYSDATE
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND BOARD_SEQ  = #{BOARD_SEQ}
+  AND ITEM_SEQ   = #{ITEM_SEQ}
+</update>
+
+<!--//
+	 
+//-->
+<update id="deleteBoardItem" parameterType="queryParameterMap">
+DELETE FROM HR_BOARD_ITEM
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND BOARD_SEQ  = #{BOARD_SEQ}
+  AND ITEM_SEQ   = #{ITEM_SEQ}
+</update>
+
+<!--//
+	 
+//-->
+<update id="updateReplyUpdate" parameterType="queryParameterMap">
+    UPDATE HR_BOARD_ITEM
+       SET REPLY_ORDER = REPLY_ORDER + 1
+    WHERE COMPANY_CD = #{COMPANY_CD}
+      AND BOARD_SEQ  = #{BOARD_SEQ}
+      AND REPLY_SEQ  = #{REPLY_SEQ}
+      AND REPLY_ORDER &gt; #{REPLY_ORDER}
+</update>
+
+<select id="selectItemCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT
+        COUNT(*) CNT                                                  /* 게시물           */
+FROM HR_BOARD_ITEM
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND BOARD_SEQ  = #{BOARD_SEQ}
+  AND REPLY_SEQ   = #{REPLY_SEQ}
+</select>
+
+</mapper>

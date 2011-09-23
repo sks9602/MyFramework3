@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:24 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MenuMng">
+
+<select id="selectMenuTree" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT MI.COMPANY_CD
+      ,MI.MENU_ID
+      ,MI.SYSTEM_CD
+      ,MI.PAGE_ID
+      ,MI.MENU_NAME||DECODE(USE_YN, 'N', '[N]')   ITEM_LABEL
+      ,MI.MENU_LEVEL
+      ,MI.MENU_TYPE
+      ,MI.P_MENU_ID
+      ,MI.USE_YN
+      ,LEVEL LVL_COL
+      ,SUBSTR(SYS_CONNECT_BY_PATH(MI.MENU_ID, '&gt;'),2) AS FULL_MENU_ID
+  FROM S_MENU_INFO MI
+ WHERE COMPANY_CD = #{COMPANY_CD}
+       START WITH P_MENU_ID = #{SYSTEM_CD} AND COMPANY_CD = #{COMPANY_CD} 
+       CONNECT BY  P_MENU_ID = PRIOR MENU_ID  AND COMPANY_CD = #{COMPANY_CD} 
+  ORDER BY 11
+</select>
+
+
+<select id="selectMenuInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT
+       A.MENU_ID        /* 메뉴 ID     */
+      ,A.MENU_NAME      /* 메뉴 명     */
+      ,A.MENU_LEVEL     /* 메뉴레벨    */
+      ,A.MENU_TYPE      /* 메뉴타입    */
+      ,A.SYSTEM_CD      /* 시스템코드  */
+      ,A.PAGE_ID        /* 화면ID      */
+      ,(SELECT MENU_NAME FROM S_MENU_INFO WHERE COMPANY_CD = A.COMPANY_CD AND MENU_ID = A.P_MENU_ID) AS P_MENU_NAME   /* 상위메뉴 명 */
+      ,A.P_MENU_ID      /* 상위메뉴 ID */
+      ,A.USE_YN         /* 사용여부    */
+      ,B.PGM_NM         /* 프로그램명  */
+      ,B.PGM_COMMENT    /* 프로그램설명*/
+      ,B.PGM_URL        /* 링크 URL    */
+FROM S_MENU_INFO A, S_PAGE_INFO B
+WHERE A.COMPANY_CD   = #{COMPANY_CD}
+  AND A.MENU_ID      = #{DETAIL_MENU_ID}
+  AND A.COMPANY_CD   = B.COMPANY_CD (+)
+  AND A.PAGE_ID      = B.PAGE_ID    (+)
+</select>
+
+<select id="selectPageListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) CNT
+FROM  S_PAGE_INFO
+WHERE  COMPANY_CD = #{COMPANY_CD}
+  AND  SYSTEM_CD  = #{SYSTEM_CD}
+  AND  PAGE_ID    LIKE #{PAGE_ID}||'%'
+  AND  UPPER(REPLACE(PGM_NM,' ','')) LIKE '%'||UPPER(REPLACE(#{PGM_NM},' ',''))||'%'
+</select>
+
+<select id="selectPageList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.*, BB.PGM_NM CODE, BB.PAGE_ID  NAME 
+      ,F_CODE_NAME2(COMPANY_CD, 'W02', 'USEDEF1', SYSTEM_CD ) SYSTEM_CD_NM
+      ,F_CODE_NAME(COMPANY_CD, PAGE_TYPE) PAGE_TYPE_NM
+      , #{FORMNAME} FORM_OBJ_NAME, #{OBJNAME} OBJ_NAME, #{P_ACTION_FLAG} P_ACTION_FLAG
+FROM ( SELECT ROWNUM RN, AA.* FROM (SELECT *
+FROM  S_PAGE_INFO
+WHERE  COMPANY_CD = #{COMPANY_CD}
+  AND  SYSTEM_CD  = #{SYSTEM_CD}
+  AND  PAGE_ID    LIKE #{PAGE_ID}||'%'
+  AND  UPPER(REPLACE(PGM_NM,' ','')) LIKE '%'||UPPER(REPLACE(#{PGM_NM},' ',''))||'%'
+ORDER  BY PAGE_ID
+	) AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+) BB WHERE BB.RN  &gt;  #{BEGINROWNUM}
+</select>
+
+
+<select id="selectMenuIdExists" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT count(*) AS CNT
+FROM S_MENU_INFO
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MENU_ID    = #{NEW_MENU_ID}
+</select>
+
+<update id="insertMenuInfo" parameterType="queryParameterMap">
+INSERT INTO S_MENU_INFO(
+                       COMPANY_CD      /* 회사코드    */
+                       ,MENU_ID         /* 메뉴ID      */
+                      ,SYSTEM_CD       /* 시스템코드  */
+                      ,PAGE_ID         /* 화면ID      */
+                      ,MENU_NAME       /* 메뉴 명     */
+                      ,MENU_LEVEL      /* 메뉴레벨    */
+                      ,MENU_TYPE       /* 메뉴타입    */
+                      ,P_MENU_ID       /* 상위메뉴 ID */
+                      ,USE_YN          /* 사용여부    */
+                      ,REGI_NO         /* 등록자      */
+                      ,REGI_DT        /*등록일*/
+                    )
+              VALUES(
+                       #{COMPANY_CD}
+                      ,#{NEW_MENU_ID}
+                      ,#{SYSTEM_CD}
+                      ,#{PAGE_ID}
+                      ,#{MENU_NAME}
+                      ,#{MENU_LEVEL}
+                      ,#{MENU_TYPE}
+                      ,#{P_MENU_ID}
+                      ,#{USE_YN}
+                      ,#{USER_EMPID}
+                      ,sysdate
+                    )
+</update>
+
+
+<update id="updateMenuInfo" parameterType="queryParameterMap">
+UPDATE S_MENU_INFO
+   SET SYSTEM_CD  = #{SYSTEM_CD}
+      ,PAGE_ID    = #{PAGE_ID}
+      ,MENU_NAME  = #{MENU_NAME}
+      ,MENU_LEVEL = #{MENU_LEVEL}
+      ,MENU_TYPE  = #{MENU_TYPE}
+      ,USE_YN     = #{USE_YN}
+      ,MODI_NO    = #{USER_EMPID}          /* 수정자      */
+      ,MODI_DT   = sysdate     /*수정일*/
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MENU_ID    = #{ORI_MENU_ID}
+</update>
+
+<update id="deleteMenuInfo" parameterType="queryParameterMap">
+DELETE FROM S_MENU_INFO
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MENU_ID    LIKE #{ORI_MENU_ID}||'%'
+</update>
+
+
+</mapper>

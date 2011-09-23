@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:20 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Board">
+
+<select id="selectList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LIST.*, 	F_CODE_NAME( LIST.COMPANY_CD, LIST.BOARD_TYPE) BOARD_TYPE_NANE,  
+    (SELECT CAFE_NAME
+     FROM  HR_CAFE  HC, HR_CAFE_BOARD HCB
+     WHERE HCB.COMPANY_CD = HC.COMPANY_CD
+       AND HCB.CAFE_SEQ   = HC.CAFE_SEQ
+       AND HCB.COMPANY_CD = LIST.COMPANY_CD
+       AND HCB.BOARD_SEQ  = LIST.BOARD_SEQ
+    ) AS CAFE_NAME ,  /* CAFE 명             */
+	(SELECT COUNT(*) FROM HR_BOARD_ITEM  A
+                 	WHERE A.COMPANY_CD = LIST.COMPANY_CD
+                  	  AND A.BOARD_SEQ  = LIST.BOARD_SEQ ) AS BOARD_CNT /* 게시물 수 */
+  FROM
+    (
+       SELECT ROWNUM RN, SUB.*
+        FROM
+             (
+                 SELECT
+                        COMPANY_CD       /* 회사코드            */
+                       ,BOARD_SEQ        /* 게시판SEQ           */
+                       ,BOARD_TYPE       /* 게시판형태          */
+                       ,BOARD_NAME       /* 게시판명            */
+                       ,REPLY_YN         /* 답글가능여부        */
+                       ,FILE_YN          /* 첨부파일가능여부    */
+                       ,APPROVAL_YN      /* 승인사용여부        */
+                       ,PERIOD_YN        /* 게시기간사용여부    */
+                       ,RECOMMAND_YN     /* 추천사용여부        */
+                       ,ADDITION_YN      /* 댓글가능여부        */
+                       ,USE_YN           /* 사용여부            */
+                       ,USEDEF_YN        /* 사용자정의가능여부        */
+                       ,IMGUSE_YN        /* 이미지사용가능여부        */
+                       ,TO_CHAR(REGI_DT,'YYYY-MM-DD') AS REGI_DT  /* 등록일            */
+                       ,TO_CHAR(MODI_DT,'YYYY-MM-DD') AS MODI_DT  /* 수정일            */
+                  FROM  HR_BOARD  HB
+                 WHERE USE_YN NOT IN 'D'  
+				 <if test="S_COMPANY_CD_ES != ''">
+					AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HB.COMPANY_CD IN (">
+						#{S_COMPANY_CD_item}
+					</foreach>
+				 </if>
+				 <if test="S_BOARD_TYPE_ES != ''">
+					AND <foreach collection="S_BOARD_TYPE_ES" item="item" separator="," close=")" open=" BOARD_TYPE IN (">
+						#{S_BOARD_TYPE_item}
+					</foreach>
+				 </if>
+					 <if test="S_BOARD_NAME_ES != ''">
+						AND <foreach collection="S_BOARD_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+							REPLACE(UPPER(HB.BOARD_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_BOARD_NAME_item}),' ','')||'%'
+						</foreach>
+					 </if>
+					 <if test="S_USE_YN_ES != ''">
+						AND <foreach collection="S_USE_YN_ES" item="item" separator="," close=")" open=" USE_YN IN (">
+							#{S_USE_YN_item}
+						</foreach>
+					 </if>
+				 <if test="SORT != ''">
+				 	ORDER BY ${SORT} ${DIR}
+				 </if>
+				 <if test="SORT == ''">
+				 	ORDER BY BOARD_NAME
+				 </if>
+              ) SUB
+       WHERE ROWNUM  &lt;  #{ENDROWNUM} 
+     ) LIST
+WHERE RN  &gt;  #{BEGINROWNUM}
+</select>
+
+<select id="selectListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+ SELECT COUNT(*) CNT
+   FROM HR_BOARD  HB
+  WHERE USE_YN NOT IN 'D'  
+	 <if test="S_COMPANY_CD_ES != ''">
+		AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HB.COMPANY_CD IN (">
+			#{S_COMPANY_CD_item}
+		</foreach>
+	 </if>
+ <if test="S_BOARD_TYPE_ES != ''">
+	AND <foreach collection="S_BOARD_TYPE_ES" item="item" separator="," close=")" open=" BOARD_TYPE IN (">
+		#{S_BOARD_TYPE_item}
+	</foreach>
+ </if>
+	 <if test="S_BOARD_NAME_ES != ''">
+		AND <foreach collection="S_BOARD_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+			REPLACE(UPPER(HB.BOARD_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_BOARD_NAME_item}),' ','')||'%'
+		</foreach>
+	 </if>
+ <if test="S_USE_YN_ES != ''">
+	AND <foreach collection="S_USE_YN_ES" item="item" separator="," close=")" open=" USE_YN IN (">
+		#{S_USE_YN_item}
+	</foreach>
+ </if>
+</select>
+
+
+<select id="selectInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HB.COMPANY_CD   
+      ,HB.BOARD_SEQ  
+      ,HB.BOARD_TYPE
+      ,HB.BOARD_NAME
+      ,HB.REPLY_YN
+      ,HB.FILE_YN
+      ,HB.APPROVAL_YN
+      ,HB.PERIOD_YN
+      ,HB.RECOMMAND_YN
+      ,HB.ADDITION_YN
+      ,HB.USE_YN
+      ,HB.USEDEF_YN        /* 사용자정의가능여부        */
+      ,HB.IMGUSE_YN        /* 이미지사용가능여부        */
+      ,HB.REGI_DT     
+      ,HB.REGI_NO
+      ,HB.MODI_DT     
+      ,HB.MODI_NO 
+  FROM HR_BOARD HB  
+ WHERE COMPANY_CD = #{COMPANY_CD}
+ <if test="BOARD_SEQ != ''">
+   AND BOARD_SEQ = #{BOARD_SEQ} 
+</if>    
+   AND UPPER(BOARD_NAME) LIKE '%' || UPPER (#{BOARD_NAME}) || '%'           
+<!--SELECT *
+   FROM HR_BOARD
+  WHERE COL1 = #{COL1} -->
+</select>
+
+
+<select id="selectBoardNextSeq" parameterType="queryParameterMap" resultType="queryResultListMap">
+			SELECT NVL(MAX(BOARD_SEQ),0)+1 AS NEXT_SEQ
+			  FROM HR_BOARD
+			 WHERE 1 = 1
+			   AND COMPANY_CD = #{COMPANY_CD}			   
+</select>
+
+
+<update id="insertInfo" parameterType="queryParameterMap">
+INSERT INTO HR_BOARD HB(
+	   HB.COMPANY_CD   
+      ,HB.BOARD_SEQ  
+      ,HB.BOARD_TYPE
+      ,HB.BOARD_NAME
+      ,HB.REPLY_YN
+      ,HB.FILE_YN
+      ,HB.APPROVAL_YN
+      ,HB.PERIOD_YN
+      ,HB.RECOMMAND_YN
+      ,HB.ADDITION_YN
+      ,HB.USE_YN
+      ,HB.USEDEF_YN        /* 사용자정의가능여부        */
+      ,HB.IMGUSE_YN        /* 이미지사용가능여부        */
+      ,HB.REGI_DT     
+      ,HB.REGI_NO        
+      )  
+ VALUES ( #{COMPANY_CD}   
+	     ,#{NEXT_SEQ}
+	     ,#{BOARD_TYPE}
+	     ,#{BOARD_NAME}
+	     ,#{REPLY_YN}
+	     ,#{FILE_YN}
+	     ,#{APPROVAL_YN}
+         ,#{PERIOD_YN}	      
+         ,#{RECOMMAND_YN}
+	     ,#{ADDITION_YN}
+	     ,#{USE_YN}
+         ,#{USEDEF_YN}
+         ,#{IMGUSE_YN}
+	     ,SYSDATE   
+	     ,#{USER_EMPID}	  
+	     ) 
+ 			
+<!--INSERT INTO HR_BOARD(COL1, COL2  )
+                  VALUES(#{COL1}, #{COL2} )-->   
+</update>
+
+
+<update id="updateInfo" parameterType="queryParameterMap">
+UPDATE HR_BOARD SET
+	  BOARD_TYPE = #{BOARD_TYPE}
+	 ,BOARD_NAME = #{BOARD_NAME}
+ 	 ,REPLY_YN = #{REPLY_YN} 
+	 ,FILE_YN = #{FILE_YN} 
+	 ,APPROVAL_YN = #{APPROVAL_YN} 
+  	 ,PERIOD_YN = #{PERIOD_YN} 
+ 	 ,RECOMMAND_YN = #{RECOMMAND_YN} 
+  	 ,ADDITION_YN = #{ADDITION_YN} 
+  	 ,USE_YN = #{USE_YN}     
+     ,USEDEF_YN = #{USEDEF_YN}
+     ,IMGUSE_YN = #{IMGUSE_YN}
+     ,MODI_DT = SYSDATE
+     ,MODI_NO = #{USER_EMPID}
+WHERE COMPANY_CD = #{COMPANY_CD} 
+  AND BOARD_SEQ  = #{BOARD_SEQ} 
+</update>
+
+<update id="deleteInfo" parameterType="queryParameterMap">
+DELETE FROM HR_BOARD
+ WHERE COMPANY_CD    = #{COMPANY_CD}   
+   AND BOARD_SEQ     = #{BOARD_SEQ}    
+</update>
+
+
+<update id="callProcedure" parameterType="queryParameterMap" statementType="CALLABLE">
+	{call PROCEDURE_NAME (#{COL1,jdbcType=VARCHAR,mode=IN},
+                         #{COL2,jdbcType=VARCHAR,mode=IN},
+                         #{COL3,jdbcType=NUMBER,mode=IN},
+                         #{COL4,jdbcType=DECIMAL,mode=OUT,numericScale=1} )}
+</update>
+
+</mapper>

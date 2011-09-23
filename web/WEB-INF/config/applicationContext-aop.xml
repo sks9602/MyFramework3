@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+"http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<bean id="preLoggingAdvice"  class="project.jun.aop.advice.HoPreLoggingAdvice"/>
+	<bean id="postLoggingAdvice" class="project.jun.aop.advice.HoPostLoggingAdvice"/>
+	<bean id="cacheAdvice"       class="project.jun.aop.advice.HoCacheAdvice"/>
+	<bean id="excpetionAdvice"   class="project.jun.aop.advice.HoThrowingAdvice"/>
+	
+	<bean id="daoPointcut"       class="project.jun.aop.pointcut.HoDAOPointcut"/>
+	<bean id="delegatePointcut"  class="project.jun.aop.pointcut.HoDelegatePointcut"/>
+	<bean id="actionPointcut"    class="project.jun.aop.pointcut.HoActionPointcut"/>
+	<bean id="excpetionPointcut" class="org.springframework.aop.support.JdkRegexpMethodPointcut">
+		<property name="pattern" value=".*Action.execute"/>
+	</bean>
+
+	<bean id="preActionLoggingAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+		<property name="advice">
+			<ref local="preLoggingAdvice"/>
+		</property>
+		<property name="pointcut">
+			<ref local="actionPointcut"/>
+		</property>
+	</bean>
+	<bean id="preDelegateLoggingAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+		<property name="advice">
+			<ref local="preLoggingAdvice"/>
+		</property>
+		<property name="pointcut">
+			<ref local="delegatePointcut"/>
+		</property>
+	</bean>
+
+	<bean id="preDAOLoggingAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+		<property name="advice">
+			<ref local="preLoggingAdvice"/>
+		</property>
+		<property name="pointcut">
+			<ref local="daoPointcut"/>
+		</property>
+	</bean>
+
+	<bean id="postDAOLoggingAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+		<property name="advice">
+			<ref local="postLoggingAdvice"/>
+		</property>
+		<property name="pointcut">
+			<ref local="daoPointcut"/>
+		</property>
+	</bean>
+
+	<bean id="cacheAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+		<property name="advice">
+			<ref local="cacheAdvice"/>
+		</property>
+		<property name="pointcut">
+			<ref local="daoPointcut"/>
+		</property>
+	</bean>
+
+	<bean id="actionExecptionAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+		<property name="advice">
+			<ref local="excpetionAdvice"/>
+		</property>
+		<property name="pointcut">
+			<ref local="excpetionPointcut"/>
+		</property>
+	</bean>
+
+</beans>

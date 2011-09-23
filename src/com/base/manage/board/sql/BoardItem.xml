@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:22 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardItem">
+
+<!--//
+해당 게시판의 게시물 리스트를 조회한다.
+//-->
+<select id="selectBoardItemnList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LIST.COMPANY_CD
+	  ,LIST.RN   
+      ,LIST.BOARD_SEQ    
+      ,LIST.ITEM_SEQ     
+      ,LIST.TITLE              
+      ,LIST.REPLY_SEQ    
+      ,LIST.REPLY_ORDER  
+      ,LIST.REPLY_LEVEL             
+      ,LIST.VIEW_CNT
+      ,LIST.WRITE_ID     
+      ,LIST.WRITE_NM
+      ,F_DATE_CHAR(LIST.REAL_WRITE_DT) AS REAL_WRITE_DT
+  FROM (SELECT ROWNUM RN
+  			  ,SUB.COMPANY_CD   
+              ,SUB.BOARD_SEQ    
+              ,SUB.ITEM_SEQ     
+              ,SUB.TITLE              
+              ,SUB.REPLY_SEQ    
+              ,SUB.REPLY_ORDER  
+              ,SUB.REPLY_LEVEL             
+              ,SUB.VIEW_CNT
+              ,SUB.REAL_WRITE_DT
+              ,SUB.WRITE_ID     
+              ,SUB.WRITE_NM
+          FROM (SELECT HBI.COMPANY_CD   
+                      ,HBI.BOARD_SEQ    
+                      ,HBI.ITEM_SEQ     
+                      ,HBI.TITLE              
+                      ,HBI.REPLY_SEQ    
+                      ,HBI.REPLY_ORDER  
+                      ,HBI.REPLY_LEVEL             
+                      ,HBI.VIEW_CNT
+                      ,HBI.REAL_WRITE_DT
+                      ,HBI.WRITE_ID     
+                      ,HBI.WRITE_NM        
+                  FROM HR_BOARD_ITEM HBI 
+                 WHERE COMPANY_CD = #{COMPANY_CD}
+					AND BOARD_SEQ = #{BOARD_SEQ}
+				 <if test="S_TITLE != ''">
+					AND REPLACE(UPPER(TITLE),' ','') LIKE '%'|| REPLACE(UPPER(#{S_TITLE}),' ','')||'%'
+				 </if>
+				 <if test="SORT != ''">
+				 	ORDER BY ${SORT} ${DIR},REPLY_SEQ DESC, REPLY_ORDER ASC, REPLY_LEVEL
+				 </if>
+				 <if test="SORT == ''">
+				 	ORDER BY HBI.REAL_WRITE_DT desc, REPLY_SEQ DESC, REPLY_ORDER ASC, REPLY_LEVEL
+				 </if>
+				   ) SUB
+         WHERE ROWNUM  &lt;  #{ENDROWNUM} 
+		 ) LIST
+ WHERE RN  &gt;  #{BEGINROWNUM}
+</select> 
+<!--//
+게시물의 수를 조회한다.
+//-->
+<select id="selectBoardItemnListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT
+  FROM HR_BOARD_ITEM HBI
+ WHERE COMPANY_CD = #{COMPANY_CD}
+	AND BOARD_SEQ = #{BOARD_SEQ}
+   <if test="S_TITLE != ''">
+	AND REPLACE(UPPER(TITLE),' ','') LIKE '%'|| REPLACE(UPPER(#{S_TITLE}),' ','')||'%'
+   </if>
+</select>
+<!--//
+게시물을 정보를 조회한다.
+//-->
+<select id="boardItemInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HBI.COMPANY_CD   
+      ,HBI.BOARD_SEQ    
+      ,HBI.ITEM_SEQ     
+      ,HBI.TITLE        
+      ,HBI.CONTENT      
+      ,HBI.REPLY_SEQ    
+      ,HBI.REPLY_ORDER  
+      ,HBI.REPLY_LEVEL  
+      ,HBI.IP_ADDR      
+      ,HBI.START_YMD    
+      ,HBI.END_YMD      
+      ,HBI.NOTICE_YN    
+      ,HBI.APPROVAL_YN  
+      ,HBI.QA_GBN       
+      ,HBI.HTML_GBN     
+      ,HBI.FILEGRP_NO   
+      ,HBI.VIEW_CNT     
+      ,HBI.RECOMMAND_CNT
+      ,HBI.REAL_WRITE_DT
+      ,HBI.WRITE_ID     
+      ,HBI.WRITE_NM     
+      ,HBI.EMAIL        
+      ,HBI.POPUP_WIDTH  
+      ,HBI.POPUP_HEIGHT 
+      ,HBI.PRIORITY
+      ,HBI.IMG_EXT     
+      ,HBI.USEDEF1     
+      ,HBI.USEDEF2     
+      ,HBI.USEDEF3     
+      ,HBI.USEDEF4     
+      ,HBI.USEDEF5     
+      ,F_DATE_CHAR(HBI.START_YMD) AS START_YMD_CHAR
+      ,F_DATE_CHAR(HBI.END_YMD) AS END_YMD_CHAR
+      ,F_DATE_CHAR(HBI.REAL_WRITE_DT) AS REAL_WRITE_CHAR
+  FROM HR_BOARD_ITEM HBI
+  WHERE COMPANY_CD = #{COMPANY_CD}
+    AND BOARD_SEQ  = #{BOARD_SEQ}
+    AND ITEM_SEQ   = #{ITEM_SEQ}
+</select>
+<!--//
+게시판 정보를 조회한다.
+//-->
+<select id="boardInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HB.COMPANY_CD   
+      ,HB.BOARD_SEQ  
+      ,HB.BOARD_TYPE
+      ,HB.BOARD_NAME
+      ,HB.REPLY_YN
+      ,HB.FILE_YN
+      ,HB.APPROVAL_YN
+      ,HB.PERIOD_YN
+      ,HB.RECOMMAND_YN
+      ,HB.ADDITION_YN
+      ,HB.USE_YN
+      ,HB.USEDEF_YN        /* 사용자정의가능여부        */
+      ,HB.IMGUSE_YN        /* 이미지사용가능여부        */
+      ,HB.REGI_DT     
+      ,HB.REGI_NO
+      ,HB.MODI_DT     
+      ,HB.MODI_NO 
+  FROM HR_BOARD HB  
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND BOARD_SEQ = #{BOARD_SEQ}          
+</select>
+<!--//
+다음 게시판 순번을 조회한다.
+//-->
+<select id="nextItemSeq" parameterType="queryParameterMap" resultType="queryResultListMap">
+			SELECT NVL(MAX(ITEM_SEQ),0)+1 AS ITEM_SEQ
+			  FROM HR_BOARD_ITEM
+			 WHERE 1 = 1
+			   AND COMPANY_CD = #{COMPANY_CD}
+			   AND BOARD_SEQ  = #{BOARD_SEQ}
+</select>
+<!--//
+답글을 등록한다.
+//-->
+<update id="insertReplyBoardItem" parameterType="queryParameterMap">
+INSERT INTO HR_BOARD_ITEM ( 
+							REAL_WRITE_DT
+							,VIEW_CNT
+							,REGI_DT
+							,MODI_DT
+							<if test="COMPANY_CD != ''">,COMPANY_CD</if>	 
+							<if test="BOARD_SEQ != ''">,BOARD_SEQ</if>	 
+                            <if test="NEXT_ITEM_SEQ != ''">, ITEM_SEQ</if>
+                            <if test="REPLY_SEQ != ''">, REPLY_SEQ</if>
+                            <if test="REPLY_ORDER != ''">, REPLY_ORDER</if>
+                            <if test="REPLY_LEVEL != ''">, REPLY_LEVEL</if>
+                            <if test="TITLE != ''">, TITLE</if>
+                            <if test="CONTENT != ''">, CONTENT</if>
+                            <if test="IP_ADDR != ''">, IP_ADDR</if>
+                            <if test="START_YMD != ''">, START_YMD</if>
+                            <if test="END_YMD != ''">, END_YMD</if>
+                            <if test="NOTICE_YN != ''">, NOTICE_YN</if>
+                            <if test="APPROVAL_YN != ''">, APPROVAL_YN</if>
+                            <if test="QA_GBN != ''">, QA_GBN</if>
+                            <if test="HTML_GBN != ''">, HTML_GBN</if>
+                            <if test="FILEGRP_NO != ''">, FILEGRP_NO</if>
+                            <if test="USER_EMPID != ''">, WRITE_ID</if>
+                            <if test="WRITE_NM != ''">, WRITE_NM</if>
+                            <if test="POPUP_WIDTH != ''">, POPUP_WIDTH</if>
+                            <if test="POPUP_HEIGHT != ''">, POPUP_HEIGHT</if>
+                            <if test="PRIORITY != ''">, PRIORITY</if>
+                            <if test="USEDEF1 != ''">, USEDEF1</if>
+                            <if test="USEDEF2 != ''">, USEDEF2</if>
+                            <if test="USEDEF3 != ''">, USEDEF3</if>
+                            <if test="USEDEF4 != ''">, USEDEF4</if>
+                            <if test="USEDEF5 != ''">, USEDEF5</if>
+                            <if test="IMG_EXT != ''">, IMG_EXT</if>
+                            <if test="USER_EMPID != ''">, REGI_NO</if>
+                            <if test="USER_EMPID != ''">, MODI_NO</if>
+                            )
+                   VALUES ( 
+                            TO_CHAR(SYSDATE,'YYYYMMDD')      
+                            ,0              
+                            ,SYSDATE        
+                            ,SYSDATE        							
+							<if test="COMPANY_CD != ''">,#{COMPANY_CD}</if>	 
+							<if test="BOARD_SEQ != ''">,#{BOARD_SEQ}</if>	 
+                            <if test="NEXT_ITEM_SEQ != ''">,#{NEXT_ITEM_SEQ}</if>
+                            <if test="REPLY_SEQ != ''">,#{REPLY_SEQ}</if>
+                            <if test="REPLY_ORDER != ''">,#{REPLY_ORDER}</if>
+                            <if test="REPLY_LEVEL != ''">,#{REPLY_LEVEL}</if>
+                            <if test="TITLE != ''">,#{TITLE}</if>
+                            <if test="CONTENT != ''">,#{CONTENT}</if> 
+                            <if test="IP_ADDR != ''">,#{IP_ADDR}</if>
+                            <if test="START_YMD != ''">,#{START_YMD}</if>
+                            <if test="END_YMD != ''">,#{END_YMD}</if>
+                            <if test="NOTICE_YN != ''">,#{NOTICE_YN}</if>
+                            <if test="APPROVAL_YN != ''">,#{APPROVAL_YN}</if>
+                            <if test="QA_GBN != ''">,#{QA_GBN}</if>
+                            <if test="HTML_GBN != ''">,#{HTML_GBN}</if>
+                            <if test="FILEGRP_NO != ''">,#{FILEGRP_NO}</if>
+                            <if test="USER_EMPID != ''">,#{USER_EMPID}</if>
+                            <if test="WRITE_NM != ''">,#{WRITE_NM}</if>
+                            <if test="POPUP_WIDTH != ''">,#{POPUP_WIDTH}</if>
+                            <if test="POPUP_HEIGHT != ''">,#{POPUP_HEIGHT}</if>
+                            <if test="PRIORITY != ''">,#{PRIORITY}</if>
+                            <if test="USEDEF1 != ''">,#{USEDEF1}</if>
+                            <if test="USEDEF2 != ''">,#{USEDEF2}</if>
+                            <if test="USEDEF3 != ''">,#{USEDEF3}</if>
+                            <if test="USEDEF4 != ''">,#{USEDEF4}</if>
+                            <if test="USEDEF5 != ''">,#{USEDEF5}</if>
+                            <if test="IMG_EXT != ''">,#{IMG_EXT}</if>
+                            <if test="USER_EMPID != ''">,#{USER_EMPID}</if>
+                            <if test="USER_EMPID != ''">,#{USER_EMPID}</if>
+                 ) 
+</update>
+<!--//
+게시물을 등록한다.
+//-->
+<update id="insertBoardItem" parameterType="queryParameterMap">
+INSERT INTO HR_BOARD_ITEM ( 
+							REAL_WRITE_DT
+							,VIEW_CNT
+							,REGI_DT
+							,MODI_DT
+							<if test="COMPANY_CD != ''">,COMPANY_CD</if>	 
+							<if test="BOARD_SEQ != ''">,BOARD_SEQ</if>	 
+                            <if test="NEXT_ITEM_SEQ != ''">, ITEM_SEQ</if>
+                            <if test="NEXT_ITEM_SEQ != ''">, REPLY_SEQ</if>
+                            <if test="REPLY_ORDER != ''">, REPLY_ORDER</if>
+                            <if test="REPLY_LEVEL != ''">, REPLY_LEVEL</if>
+                            <if test="TITLE != ''">, TITLE</if>
+                            <if test="CONTENT != ''">, CONTENT</if>
+                            <if test="IP_ADDR != ''">, IP_ADDR</if>
+                            <if test="START_YMD != ''">, START_YMD</if>
+                            <if test="END_YMD != ''">, END_YMD</if>
+                            <if test="NOTICE_YN != ''">, NOTICE_YN</if>
+                            <if test="APPROVAL_YN != ''">, APPROVAL_YN</if>
+                            <if test="QA_GBN != ''">, QA_GBN</if>
+                            <if test="HTML_GBN != ''">, HTML_GBN</if>
+                            <if test="FILEGRP_NO != ''">, FILEGRP_NO</if>
+                            <if test="USER_EMPID != ''">, WRITE_ID</if>
+                            <if test="WRITE_NM != ''">, WRITE_NM</if>
+                            <if test="POPUP_WIDTH != ''">, POPUP_WIDTH</if>
+                            <if test="POPUP_HEIGHT != ''">, POPUP_HEIGHT</if>
+                            <if test="PRIORITY != ''">, PRIORITY</if>
+                            <if test="USEDEF1 != ''">, USEDEF1</if>
+                            <if test="USEDEF2 != ''">, USEDEF2</if>
+                            <if test="USEDEF3 != ''">, USEDEF3</if>
+                            <if test="USEDEF4 != ''">, USEDEF4</if>
+                            <if test="USEDEF5 != ''">, USEDEF5</if>
+                            <if test="IMG_EXT != ''">, IMG_EXT</if>
+                            <if test="USER_EMPID != ''">, REGI_NO</if>
+                            <if test="USER_EMPID != ''">, MODI_NO</if>
+							)
+                   VALUES ( 
+                            TO_CHAR(SYSDATE,'YYYYMMDD')      
+                            ,0              
+                            ,SYSDATE        
+                            ,SYSDATE        							
+							<if test="COMPANY_CD != ''">,#{COMPANY_CD}</if>	 
+							<if test="BOARD_SEQ != ''">,#{BOARD_SEQ}</if>	 
+                            <if test="NEXT_ITEM_SEQ != ''">,#{NEXT_ITEM_SEQ}</if>
+                            <if test="NEXT_ITEM_SEQ != ''">,#{NEXT_ITEM_SEQ}</if>
+                            <if test="REPLY_ORDER != ''">,#{REPLY_ORDER}</if>
+                            <if test="REPLY_LEVEL != ''">,#{REPLY_LEVEL}</if>
+                            <if test="TITLE != ''">,#{TITLE}</if>
+                            <if test="CONTENT != ''">,#{CONTENT}</if> 
+                            <if test="IP_ADDR != ''">,#{IP_ADDR}</if>
+                            <if test="START_YMD != ''">,#{START_YMD}</if>
+                            <if test="END_YMD != ''">,#{END_YMD}</if>
+                            <if test="NOTICE_YN != ''">,#{NOTICE_YN}</if>
+                            <if test="APPROVAL_YN != ''">,#{APPROVAL_YN}</if>
+                            <if test="QA_GBN != ''">,#{QA_GBN}</if>
+                            <if test="HTML_GBN != ''">,#{HTML_GBN}</if>
+                            <if test="FILEGRP_NO != ''">,#{FILEGRP_NO}</if>
+                            <if test="USER_EMPID != ''">,#{USER_EMPID}</if>
+                            <if test="WRITE_NM != ''">,#{WRITE_NM}</if>
+                            <if test="POPUP_WIDTH != ''">,#{POPUP_WIDTH}</if>
+                            <if test="POPUP_HEIGHT != ''">,#{POPUP_HEIGHT}</if>
+                            <if test="PRIORITY != ''">,#{PRIORITY}</if>
+                            <if test="USEDEF1 != ''">,#{USEDEF1}</if>
+                            <if test="USEDEF2 != ''">,#{USEDEF2}</if>
+                            <if test="USEDEF3 != ''">,#{USEDEF3}</if>
+                            <if test="USEDEF4 != ''">,#{USEDEF4}</if>
+                            <if test="USEDEF5 != ''">,#{USEDEF5}</if>
+                            <if test="IMG_EXT != ''">,#{IMG_EXT}</if>
+                            <if test="USER_EMPID != ''">,#{USER_EMPID}</if>
+                            <if test="USER_EMPID != ''">,#{USER_EMPID}</if>
+                   ) 
+</update>                            
+<!--//
+게시물을 수정한다.
+//-->
+<update id="updateItemInfo" parameterType="queryParameterMap">
+UPDATE HR_BOARD_ITEM SET
+        TITLE         = #{TITLE} 
+       , CONTENT       = #CONTENT:java.lang.String#
+       , REAL_WRITE_DT = TO_CHAR(SYSDATE,'YYYYMMDD') 
+       , WRITE_ID      = #{USER_EMPID}
+       , WRITE_NM      = #{USER_EMP_NAME}
+       <if test="IP_ADDR != ''">     , IP_ADDR       = #{IP_ADDR}         </if>
+       <if test="START_DATE_DT != ''">     , START_YMD     = #{START_DATE_DT}         </if>
+       <if test="END_DATE_DT != ''">     , END_YMD       = #{END_DATE_DT}         </if>
+       <if test="NOTICE_YN != ''">     , NOTICE_YN     = #{NOTICE_YN}         </if>
+       <if test="APPROVAL_YN != ''">     , APPROVAL_YN   = #{APPROVAL_YN}         </if>
+       <if test="QA_GBN != ''">     , QA_GBN        = #{QA_GBN}         </if>
+       <if test="HTML_GBN != ''">     , HTML_GBN      = #{HTML_GBN}         </if>
+       <if test="FILEGRP_NO != ''">     , FILEGRP_NO    = #{FILEGRP_NO}         </if>
+       <if test="EMAIL != ''">     , EMAIL         = #{EMAIL}         </if>
+       <if test="POPUP_WIDTH != ''">     , POPUP_WIDTH   = #{POPUP_WIDTH}         </if>
+       <if test="POPUP_HEIGHT != ''">     , POPUP_HEIGHT  = #{POPUP_HEIGHT}         </if>
+       <if test="PRIORITY != ''">     , PRIORITY      = #{PRIORITY}         </if>
+       <if test="USEDEF1 != ''">     , USEDEF1       = #{USEDEF1}         </if>
+       <if test="USEDEF2 != ''">     , USEDEF2       = #{USEDEF2}         </if>
+       <if test="USEDEF3 != ''">     , USEDEF3       = #{USEDEF3}         </if>
+       <if test="USEDEF4 != ''">     , USEDEF4       = #{USEDEF4}         </if>
+       <if test="USEDEF5 != ''">     , USEDEF5       = #{USEDEF5}         </if>
+       <if test="IMG_EXT != ''">     , IMG_EXT       = #{IMG_EXT}         </if>
+     , MODI_DT       = SYSDATE
+     , MODI_NO       = #{USER_EMPID}  
+ WHERE COMPANY_CD    = #{COMPANY_CD}   
+   AND BOARD_SEQ     = #{BOARD_SEQ}   
+   AND ITEM_SEQ      = #{ITEM_SEQ}   
+</update>
+<!--//
+게시물을 삭제한다.
+//-->
+<update id="deleteItemInfo" parameterType="queryParameterMap">
+DELETE FROM HR_BOARD_ITEM
+ WHERE COMPANY_CD    = #{COMPANY_CD}   
+   AND BOARD_SEQ     = #{BOARD_SEQ}   
+   AND ITEM_SEQ      = #{ITEM_SEQ}   
+</update>
+<!--//
+답글의 정렬순서를 만든다.
+//-->
+<update id="updateReply" parameterType="queryParameterMap">
+    UPDATE HR_BOARD_ITEM
+       SET REPLY_ORDER = NVL(REPLY_ORDER,0) + 1
+    WHERE COMPANY_CD = #{COMPANY_CD}
+      AND BOARD_SEQ  = #{BOARD_SEQ}
+      AND REPLY_SEQ  = #{REPLY_SEQ}
+      AND REPLY_ORDER &gt; #{REPLY_ORDER}
+</update>
+<!--//
+조회수를 증가시킨다.
+//-->
+<update id="updateViewCnt" parameterType="queryParameterMap">
+    UPDATE HR_BOARD_ITEM
+       SET VIEW_CNT = NVL(VIEW_CNT,0) + 1
+    WHERE COMPANY_CD = #{COMPANY_CD}
+      AND BOARD_SEQ  = #{BOARD_SEQ}
+	  AND ITEM_SEQ = #{ITEM_SEQ}
+</update>
+
+</mapper>

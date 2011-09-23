@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:27 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MenuDAO">
+
+<select id="selectTopMenuList" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+SELECT MENU_ID, MENU_NAME
+  FROM S_MENU_INFO
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND MENU_ID IN (
+      SELECT P_MENU_ID
+        FROM (
+          SELECT SUBSTR(P_MENU_ID,1,3) P_MENU_ID
+          FROM S_MENU_INFO A
+         WHERE A.COMPANY_CD = #{COMPANY_CD}
+           AND A.SYSTEM_CD  = #{SYSTEM_CD}
+           AND A.USE_YN     = 'Y'
+     ) GROUP BY P_MENU_ID
+)ORDER BY MENU_ID
+	
+</select>
+
+<select id="selectTopMenuInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT MENU_ID, MENU_NAME, MENU_LEVEL, MENU_TYPE, P_MENU_ID
+  FROM S_MENU_INFO MI
+ WHERE MI.COMPANY_CD = #{COMPANY_CD}
+   AND MI.MENU_ID    LIKE #{MENU_ID}
+</select> 
+
+<select id="selectLeftMenuList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT MENU_ID, MENU_NAME, MENU_LEVEL, MENU_TYPE, NVL(PI.PGM_URL,'*') PGM_URL, P_MENU_ID
+  FROM S_MENU_INFO MI
+      ,S_PAGE_INFO PI
+ WHERE MI.COMPANY_CD = #{COMPANY_CD}
+   AND MI.COMPANY_CD = PI.COMPANY_CD(+)
+   AND MI.PAGE_ID    = PI.PAGE_ID(+)
+   AND MI.SYSTEM_CD  = #{SYSTEM_CD}
+   AND MI.USE_YN     = 'Y'
+   AND MI.MENU_LEVEL &gt; 'B1501'
+   AND MI.MENU_ID LIKE #{MENU_ID}||'%'
+</select>   
+
+<select id="selectMenuName" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+SELECT A.MENU_ID, MENU_COMMENT
+  FROM S_MENU_INFO A
+ WHERE A.COMPANY_CD = '0001'      -- 회사코드
+   AND A.MENU_ID    = #{MENU_ID}
+</select>
+
+<select id="selectMenuNameGOOD" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+SELECT LEVEL   AS LVL 
+         ,A.MENU_ID, A.PAGE_ID, A.MENU_NAME, A.MENU_LEVEL, A.MENU_TYPE, B.PGM_URL
+        ,SUBSTR(SYS_CONNECT_BY_PATH(A.MENU_NAME, '&gt;'),2) AS FULL_MENU_NAME  /* 전체메뉴명  */
+  FROM S_MENU_INFO A
+      ,S_PAGE_INFO B
+ WHERE A.PAGE_ID    = B.PAGE_ID(+)
+   AND A.COMPANY_CD = #{SSN_COMPANY_CD}      -- 회사코드
+   AND A.MENU_ID    = #{MENU_ID}
+      START WITH A.COMPANY_CD = #{SSN_COMPANY_CD}  AND P_MENU_ID = SUBSTR(#{MENU_ID},1,1) 
+      CONNECT BY PRIOR MENU_ID  = P_MENU_ID AND A.COMPANY_CD = #{SSN_COMPANY_CD}
+	
+</select>
+
+<!-- 
+	메뉴의 버튼 목록조회
+ -->
+<select id="selectMenuButton" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT DISTINCT BI.BTN_ID ,BI.BTN_NM_KO ,BI.BTN_NM_ZH ,BI.BTN_NM_EN ,BI.BTNFUNC ,BI.BTNIMG ,BI.AUTH, BI.BTN_CSS, BI.ORDER_NO
+	  FROM S_BTN_INFO BI, S_USER_USERGRP UU, S_USERGRP_MENU UM
+	 WHERE UU.COMPANY_CD = #{COMPANY_CD}
+	   AND UU.MEMBER_NO  = #{USER_EMPID}
+	   AND UU.COMPANY_CD = UM.COMPANY_CD
+	   AND UU.USE_GROUP  = UM.USE_GROUP
+	   
+	   AND UM.MENU_ID    = #{MENU_ID}
+	   
+	   AND UM.AUTH_GBN    &gt;=  BI.AUTH
+		
+			AND <foreach collection="BTN_LIST" item="item" separator="," close=")" open=" BI.BTN_ID IN (">
+				REPLACE(#{BTN_item}, ' ','')
+			</foreach>
+			<if test="COURSE_REG_YN == ''">
+				<if test="CONTENT_CD != ''">
+					-- 컨텐츠조회일 경우 회사가 같아야 버튼 보임.
+					AND #{PARAM_COMPANY_CD} = #{COMPANY_CD}
+				</if>
+			</if>
+		
+	ORDER BY ORDER_NO
+</select>
+
+<select id="selectMenuButtonCourseCode" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT DISTINCT BI.BTN_ID ,BI.BTN_NM_KO ,BI.BTN_NM_ZH ,BI.BTN_NM_EN ,BI.BTNFUNC ,BI.BTNIMG ,BI.AUTH, BI.BTN_CSS, BI.ORDER_NO
+	  FROM S_BTN_INFO BI, S_USER_USERGRP UU, S_USERGRP_MENU UM
+	 WHERE UU.COMPANY_CD = #{COMPANY_CD}
+	   AND UU.MEMBER_NO  = #{USER_EMPID}
+	   AND UU.COMPANY_CD = UM.COMPANY_CD
+	   AND UU.USE_GROUP  = UM.USE_GROUP
+	   
+	   AND UM.MENU_ID    = #{MENU_ID}
+	   
+	   AND UM.AUTH_GBN    &gt;=  BI.AUTH
+		
+			AND <foreach collection="BTN_LIST" item="item" separator="," close=")" open=" BI.BTN_ID IN (">
+				#{BTN_LIST}
+			</foreach>
+			<if test="COURSE_CODE != null">
+				AND UU.USE_GROUP IN ( SELECT USE_GROUP 
+				                        FROM HR_COURSE
+				                       WHERE COMPANY_CD  = #{COMPANY_CD}
+				                         AND COURSE_CODE = #{COURSE_CODE} )
+			</if>
+			<if test="COURSE_REG_YN == null">
+				<if test="CONTENT_CD != null">
+					-- 컨텐츠조회일 경우 회사가 같아야 버튼 보임.
+					AND #{PARAM_COMPANY_CD} = #{COMPANY_CD}
+				</if>
+			</if>
+		
+	ORDER BY ORDER_NO
+</select>
+<!-- 
+	버튼 목록조회- 메뉴 id가 없을 경우.
+ -->
+<select id="selectButton" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT BI.BTN_ID ,BI.BTN_NM_KO ,BI.BTN_NM_ZH ,BI.BTN_NM_EN ,BI.BTNFUNC ,BI.BTNIMG ,BI.AUTH, BI.BTN_CSS
+	  FROM S_BTN_INFO BI
+	 WHERE 1 = 1
+			<foreach collection="BTN_LIST_ES" index="index" item="BTN_LIST_ES" open="AND BI.BTN_ID IN (" separator="," close=")" >
+				REPLACE(#{BTN_LIST_ES}, ' ','')
+			</foreach>
+		
+	  ORDER BY ORDER_NO
+</select>
+
+<!-- 
+	전체 메뉴 목록을 조회한다.
+ -->
+<select id="selectAllMenuList" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+ SELECT SMI.MENU_ID, P_MENU_ID, 
+    replace(SMIN.MENU_NAME, '''', chr(38)||'quot;'
+    ) as MENU_NAME, MENU_URL PGM_URL
+   FROM S_MENU_INFO SMI, S_MENU_INFO_NA SMIN
+  WHERE SMI.COMPANY_CD=SMIN.COMPANY_CD(+)
+    and SMI.MENU_ID=SMIN.MENU_ID(+)
+    -- and SMI.USE_YN = 'Y'
+    and SMI.COMPANY_CD = '0001'
+    and SMI.SYSTEM_CD='B'
+    and SMIN.LANGUAGE_TYPE(+)='ko' 
+    AND SMI.MENU_ID IN (
+ SELECT SMI.MENU_ID
+   FROM S_MENU_INFO SMI, S_MENU_INFO_NA SMIN
+  WHERE SMI.COMPANY_CD=SMIN.COMPANY_CD(+)
+    and SMI.MENU_ID=SMIN.MENU_ID(+)
+    and SMI.USE_YN = 'Y'
+    and SMI.COMPANY_CD = '0001'
+    and SMI.SYSTEM_CD='B'
+    and SMIN.LANGUAGE_TYPE(+)='ko'
+  UNION ALL
+  SELECT P_MENU_ID
+   FROM S_MENU_INFO SMI, S_MENU_INFO_NA SMIN
+  WHERE SMI.COMPANY_CD=SMIN.COMPANY_CD(+)
+    and SMI.MENU_ID=SMIN.MENU_ID(+)
+    and SMI.USE_YN = 'Y'
+    and SMI.COMPANY_CD = '0001'
+    and SMI.SYSTEM_CD='B'
+    and SMIN.LANGUAGE_TYPE(+)='ko' )
+  ORDER BY SMI.MENU_ID
+  
+</select>
+
+<select id="selectAllMenuListGOOD" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+SELECT LEVEL   AS LVL  , A.P_MENU_ID, A.ICON_CLS 
+        ,A.MENU_ID, A.PAGE_ID, A.MENU_NAME, A.MENU_LEVEL, A.MENU_TYPE, NVL(B.PGM_URL, '|' )  PGM_URL
+        ,SUBSTR(SYS_CONNECT_BY_PATH(A.MENU_NAME, '&gt;'),2) AS FULL_MENU_NAME  /* 전체메뉴명  */
+        ,SUBSTR(SYS_CONNECT_BY_PATH(A.MENU_ID, '&gt;'),2) AS FULL_MENU_ID
+  FROM S_MENU_INFO A
+      ,S_PAGE_INFO B
+ WHERE A.COMPANY_CD = #{SSN_COMPANY_CD}
+   AND A.COMPANY_CD = B.COMPANY_CD(+)
+   AND A.PAGE_ID    = B.PAGE_ID(+)
+   AND MENU_ID IN  (SELECT MENU_ID FROM S_MENU_INFO A
+         WHERE A.COMPANY_CD = #{SSN_COMPANY_CD}
+           AND A.SYSTEM_CD  = #{SYSTEM_CD}
+           AND A.USE_YN     = 'Y' )
+   AND USE_YN = 'Y'
+      START WITH A.COMPANY_CD = #{SSN_COMPANY_CD}  AND P_MENU_ID = #{SYSTEM_CD}
+      CONNECT BY PRIOR MENU_ID  = P_MENU_ID AND A.COMPANY_CD = #{SSN_COMPANY_CD}
+  ORDER BY DECODE(SUBSTR(MENU_ID, 1, 3), 'B70', 0, 1), 11
+</select>
+ 
+<!-- 
+	사용사별 권한이 있는 메뉴를 조회한다.
+ -->
+<select id="selectAuthMenu" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LEVEL   AS LVL  , A.P_MENU_ID, A.ICON_CLS
+        ,A.MENU_ID, A.PAGE_ID, A.MENU_NAME, A.MENU_LEVEL, A.MENU_TYPE, NVL(B.PGM_URL, '|' )  PGM_URL
+        ,SUBSTR(SYS_CONNECT_BY_PATH(A.MENU_NAME, '&gt;'),2) AS FULL_MENU_NAME  /* 전체메뉴명  */
+        ,SUBSTR(SYS_CONNECT_BY_PATH(A.MENU_ID, '&gt;'),2) AS FULL_MENU_ID
+  FROM (SELECT DISTINCT UM.COMPANY_CD, SMI.MENU_ID, SMI.PAGE_ID, SMI.MENU_NAME, SMI.MENU_LEVEL, SMI.MENU_TYPE, SMI.P_MENU_ID, SMI.ICON_CLS
+         FROM S_USERGRP_MENU UM, S_USER_USERGRP UU, S_MENU_INFO SMI
+        WHERE UU.COMPANY_CD = UM.COMPANY_CD
+          AND UU.USE_GROUP  = UM.USE_GROUP
+          AND UU.COMPANY_CD = #{COMPANY_CD}
+          AND UU.MEMBER_NO  = #{USER_EMPID}
+          AND UU.COMPANY_CD = SMI.COMPANY_CD
+          AND UM.MENU_ID   LIKE SMI.MENU_ID||'%'
+          AND SMI.SYSTEM_CD  = #{SYSTEM_CD}
+          AND SMI.USE_YN     = 'Y' ) A
+      ,S_PAGE_INFO B
+ WHERE A.COMPANY_CD = #{COMPANY_CD}
+   AND A.COMPANY_CD = B.COMPANY_CD(+)
+   AND A.PAGE_ID    = B.PAGE_ID(+)
+   AND MENU_ID IN  (SELECT MENU_ID FROM S_MENU_INFO A
+         WHERE A.COMPANY_CD = #{COMPANY_CD}
+           AND A.SYSTEM_CD  = #{SYSTEM_CD}
+           AND A.USE_YN     = 'Y' )
+      START WITH A.COMPANY_CD = #{COMPANY_CD}  AND P_MENU_ID = #{SYSTEM_CD}
+      CONNECT BY PRIOR MENU_ID  = P_MENU_ID AND A.COMPANY_CD = #{COMPANY_CD}
+  ORDER BY DECODE(SUBSTR(MENU_ID, 1, 3), 'B70', 0, 1), 11
+</select>
+
+<!-- 사용자가 메뉴에 대한 권한을 가지고 있는지 확인. -->
+<select id="selectUserAuthMenu" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT DISTINCT 'Y' AUTH_YM, MENU_NAME
+  FROM S_USERGRP_MENU UM, S_USER_USERGRP UU, S_MENU_INFO MI, S_PAGE_INFO PI
+ WHERE UM.COMPANY_CD = UU.COMPANY_CD
+   AND UM.USE_GROUP  = UU.USE_GROUP
+   AND UM.COMPANY_CD = MI.COMPANY_CD
+   AND UM.MENU_ID    = MI.MENU_ID
+   AND MI.COMPANY_CD = PI.COMPANY_CD
+   AND MI.PAGE_ID    = PI.PAGE_ID
+   AND UU.MEMBER_NO  = #{USER_EMPID}
+   AND MI.MENU_ID    = #{MENU_ID}
+   AND PI.PGM_URL    LIKE  REPLACE(#{LINK}, '//', '/')||'%'
+</select>   
+   
+<!--  SCP고유 로그 테이블에 로그를 쌓는다. -->
+<update id="forceInsertScpWorkLog" parameterType="queryParameterMap">
+INSERT INTO V_TB_AM_COM_PAGELOG 
+(
+ SYSTEM_ID   ,  RESNO       ,  LOGIN_TIME  ,  PAGE_ID     ,  
+ ACTION_TYPE ,  USER_IP     ,  NAME        ,  ELAPSED_TIME,  
+ SUCCESS_FLAG,  REMARK      ,  ROW_COUNT   ,  USER_ID     
+)
+SELECT 'ITII',  RESNO       ,  SYSDATE     ,  #{MENU_ID},
+        #{WORK},  #{IP}        , NAME        ,  #{ELAPSED_TIME}/1000,
+        #{SUCCESS_FLAG},  NULL , 1,  MEMBER_NO     
+  FROM V_HR_MEMBER HM
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND MEMBER_NO  = #{USER_EMPID}
+</update>
+
+</mapper>

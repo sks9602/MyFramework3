@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:20 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserGroupMenu">
+<select id="getMenuListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+		   SELECT COUNT(*) CNT
+			 FROM S_MENU_INFO A, S_USERGRP_MENU B
+		    WHERE A.COMPANY_CD = #{COMPANY_CD}
+  			  AND A.MENU_TYPE  = 'B1002'
+  			  AND A.COMPANY_CD = B.COMPANY_CD (+)
+  			  AND A.MENU_ID    = B.MENU_ID  (+)
+  			  
+  			  <if test="USE_GROUP != ''">
+  			  AND B.USE_GROUP (+)= #{USE_GROUP}
+  			  </if>
+  			  <if test="S_MENU_NAME != ''">
+  			  AND A.MENU_NAME LIKE '%'||#{S_MENU_NAME}||'%'
+  			  </if>	 
+  			  
+</select>
+
+<select id="getMenuList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.*
+   FROM (SELECT ROWNUM RN, AA.*
+  	<if test="USE_GROUP != ''">
+	,(SELECT USERGRP_NM FROM S_USERGRP WHERE COMPANY_CD = AA.COMPANY_CD AND USE_GROUP = #{USE_GROUP}) AS USERGRP_NAME
+	</if>
+  	<if test="USE_GROUP == ''">
+  	, null USERGRP_NAME
+	</if>
+ 	
+               FROM (
+               			SELECT  A.COMPANY_CD
+       						   ,A.MENU_ID         /* 메뉴 ID     */
+      						   ,A.MENU_NAME       /* 메뉴 명     */
+      						   ,B.USE_GROUP       /* userGroup     */
+      						   ,(CASE WHEN B.USE_GROUP IS NULL THEN '미사용' ELSE '사용' END) USE_YN
+      						   ,B.DATA_AUTH   /* 자료권한     */
+      						   ,B.AUTH_GBN /* 권한구분     */
+						  FROM  S_MENU_INFO A, S_USERGRP_MENU B
+						 WHERE A.COMPANY_CD = #{COMPANY_CD}
+  						   AND A.MENU_TYPE  = 'B1002'
+  						   AND A.COMPANY_CD = B.COMPANY_CD (+)
+  						   AND A.MENU_ID    = B.MENU_ID  (+)
+  						   
+  						   <if test="USE_GROUP != ''">
+  						   AND B.USE_GROUP (+)= #{USE_GROUP}
+  						   </if>
+  						   <if test="S_MENU_NAME != ''">
+  			  					AND A.MENU_NAME LIKE '%'||#{S_MENU_NAME}||'%'	
+  			  			   </if>
+  						   <if test="SORT != ''">
+ 							ORDER BY ${SORT} ${DIR}
+ 						   </if>
+ 						   <if test="SORT == ''">
+ 								ORDER BY A.MENU_ID
+ 						   </if>
+ 						    
+			 ) AA
+              WHERE ROWNUM  &lt;  #{ENDROWNUM}
+  ) BB            
+  WHERE RN  &gt;  #{BEGINROWNUM}
+</select>
+
+<select id="getGrpList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT USE_GROUP       /* 사용자그룹   */
+      ,USERGRP_NM      /* 사용자그룹명 */
+		FROM S_USERGRP
+		WHERE COMPANY_CD = #{COMPANY_CD}
+		ORDER BY USE_GROUP
+</select>
+
+<!--//
+상세정보
+//-->
+<select id="getUserGroupView" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD
+       ,USE_GROUP       /* 사용자그룹   */
+      ,USERGRP_NM      /* 사용자그룹명 */
+FROM S_USERGRP
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND USE_GROUP  = #{USE_GROUP}   
+</select>
+
+<!--//
+사용자그룹메뉴 수정
+//-->
+<update id="insertUserGroup" parameterType="queryParameterMap">
+INSERT INTO S_USERGRP_MENU(
+							COMPANY_CD,
+							USE_GROUP,
+							MENU_ID,
+							AUTH_GBN,
+							REGI_NO,
+							REGI_DT
+							)VALUES(
+							#{COMPANY_CD},
+							#{USE_GROUP},
+							#{AUTH_MENU_ID},
+							#{AUTH_ES},
+							#{USER_EMPID},
+							SYSDATE
+							)
+</update>
+
+<!--//
+사용자그룹메뉴 수정
+//-->
+<update id="deleteUserGroup" parameterType="queryParameterMap">
+DELETE FROM S_USERGRP_MENU
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND USE_GROUP = #{USE_GROUP}
+   AND MENU_ID = #{AUTH_MENU_ID}
+</update>
+
+<!--//
+사용자그룹메뉴 수정
+//-->
+<update id="deleteUserGroupData" parameterType="queryParameterMap">
+DELETE FROM S_USERGRP_MENU
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND USE_GROUP = #{USE_GROUP}
+   AND MENU_ID = #{AUTH_MENU_ID}
+   AND AUTH_GBN = #{AUTH_ES}
+</update>
+</mapper>

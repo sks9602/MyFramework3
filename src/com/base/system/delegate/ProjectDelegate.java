@@ -1,0 +1,1 @@
+package com.base.system.delegate;import project.jun.delegate.HoDelegate;public class ProjectDelegate extends HoDelegate {}

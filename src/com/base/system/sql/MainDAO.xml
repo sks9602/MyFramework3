@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:26 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MainDAO">
+
+<!-- >resultMap id="queryParameterMap" class="com.systemwiz.dao.parameter.WizQueryParameterMap">
+	<result property="CONTENT" column="CONTENT" typeHandler="com.systemwiz.dao.util.WizOracleCLOBTypeHandler"/>
+</resultMap>
+<resultMap id="queryResultListMap" class="java.util.LinkedHashMap">
+	<result property="CONTENT" column="CONTENT" typeHandler="com.systemwiz.dao.util.WizOracleCLOBTypeHandler"/>
+</resultMap>
+<resultMap id="queryResultMap" class="java.util.HashMap">
+	<result property="CONTENT" column="CONTENT" typeHandler="com.systemwiz.dao.util.WizOracleCLOBTypeHandler"/>
+</resultMap -->
+
+
+<select id="selectMonthCourseList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LIST.*
+    FROM (SELECT ROWNUM RNUM, SUB.*, CNT1+CNT2+CNT3+CNT4 CNT5 /* 입과자신청 인원수 */
+            FROM (SELECT HCS.COMPANY_CD           /* 회사코드 */,
+                         HCS.COURSE_CODE          /* 과정코드 */,
+                         HC.COURSE_NAME           /* 과정명 */,
+                         HCS.EDU_YEAR             /* 교육년도 */,
+                         HCS.COURSE_SQ            /* 교육차수 */,
+                         HCS.START_DT             /* 교육시작일 */,
+                         HCS.END_DT               /* 교육종료일 */,
+                         F_DATE_CHAR ( HCS.START_DT ) || 
+CASE WHEN ( HCS.START_DT IS NULL AND HCS.END_DT IS NULL )
+                                 THEN ''
+                            ELSE '~'
+                            END
+                         || F_DATE_CHAR (HCS.END_DT) AS START_END_DT   /* 교육기간 */,
+                         HCS.PERSON_CNT            /* 교육정원 */,
+                         (SELECT COUNT (*)
+                            FROM HR_PLAN_APPLY
+                           WHERE COMPANY_CD  = HCS.COMPANY_CD
+                             AND EDU_YEAR    = HCS.EDU_YEAR
+                             AND COURSE_CODE = HCS.COURSE_CODE
+                             AND COURSE_SQ   = HCS.COURSE_SQ
+                             AND ENTER_FINAL_STATUS = 'B4702') AS CNT1                    /* 입과자승인 인원수 */,
+                         (SELECT COUNT (*)
+                            FROM HR_PLAN_APPLY
+                           WHERE COMPANY_CD  = HCS.COMPANY_CD
+                             AND EDU_YEAR    = HCS.EDU_YEAR
+                             AND COURSE_CODE = HCS.COURSE_CODE
+                             AND COURSE_SQ   = HCS.COURSE_SQ
+                             AND ENTER_FINAL_STATUS = 'B4702'
+                             AND PASS_YN     = 'Y' ) AS CNT2                          /* 수료 인원수 */,
+                        (SELECT COUNT (*)
+                            FROM HR_PLAN_APPLY
+                           WHERE COMPANY_CD  = HCS.COMPANY_CD
+                             AND EDU_YEAR    = HCS.EDU_YEAR
+                             AND COURSE_CODE = HCS.COURSE_CODE
+                             AND COURSE_SQ   = HCS.COURSE_SQ
+                             AND ENTER_FINAL_STATUS = 'B4702'
+                             AND PASS_YN     = 'N' )  AS CNT3                          /* 미수료 인원수 */,
+                        (SELECT COUNT (*)
+                            FROM HR_PLAN_APPLY
+                           WHERE COMPANY_CD  = HCS.COMPANY_CD
+                             AND EDU_YEAR    = HCS.EDU_YEAR
+                             AND COURSE_CODE = HCS.COURSE_CODE
+                             AND COURSE_SQ   = HCS.COURSE_SQ
+                             AND ENTER_FINAL_STATUS = 'B4702'
+                             AND PASS_YN     IS NULL )  AS CNT4                          /* 미처리 인원수 */,
+                         HC.EDU_TYPE                       /* 교육형태  */,
+                         F_CODE_NAME (HCS.COMPANY_CD,
+                                      HC.EDU_TYPE
+                                     ) AS EDU_TYPE_NM      /* 교육형태명 */,
+                         HC.COURSE_GBN                     /* 과정구분 */,
+                         F_CODE_NAME (HCS.COMPANY_CD,
+                                      HC.COURSE_GBN
+                                     ) AS COURSE_GBN_NM    /* 과정구분명 */,
+                         COURSE_STATUS                     /* 과정상태 */,
+                         F_CODE_NAME (HCS.COMPANY_CD,
+                                      HCS.COURSE_STATUS
+                                     ) AS COURSE_STATUS_NM /* 과정상태명 */,
+                         HC.USE_GROUP                      /* 사용자그룹 */,
+                         (SELECT USERGRP_NM FROM S_USERGRP WHERE USE_GROUP = HC.USE_GROUP) USERGRP_NM,
+                         HC.PRODUCT_CODE                   /* PRODUCT_CODE */,
+                         HC.PRODUCT_TYPE                 /* PRODUCT_TYPE */,
+                   F_CODE_NAME (HCS.COMPANY_CD,
+                                HC.PRODUCT_TYPE
+                               ) PRODUCT_TYPE_NAME
+                     FROM V_HR_COURSE_SQ HCS, V_HR_COURSE HC
+                     WHERE HCS.COMPANY_CD = HC.COMPANY_CD
+                      AND HCS.COURSE_CODE = HC.COURSE_CODE
+						<if test="S_COMPANY_CD_ES != ''">
+							AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HCS.COMPANY_CD IN (">
+								#{S_COMPANY_CD_item}
+							</foreach>
+						</if>	  									-- 회사 코드
+						<if test="S_COURSE_CODE_ES != ''">
+							AND <foreach collection="S_COURSE_CODE_ES" item="item" separator="," close=")" open=" HCS.COURSE_CODE IN (">
+								#{S_COURSE_CODE_item}
+							</foreach>
+						</if>										-- 과정코드
+						<if test="S_COURSE_NAME_ES != ''">
+							AND <foreach collection="S_COURSE_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+								REPLACE(UPPER(HC.COURSE_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_COURSE_NAME_item}),' ','')||'%'
+							</foreach>
+						</if>										-- 과정명                      
+					   <if test="S_COURSE_SQ != ''">                 	-- 과정차수 
+					   		AND HCS.COURSE_SQ          = #{S_COURSE_SQ}                                  
+					   </if>
+					   AND HC.USE_YN = 'Y'
+					   AND HCS.START_DT LIKE TO_CHAR(SYSDATE, 'YYYYMM')||'%'
+					   AND HCS.END_DT LIKE TO_CHAR(SYSDATE, 'YYYYMM')||'%'
+		                 ORDER BY START_DT
+				   ) SUB
+         WHERE ROWNUM  &lt;  #{ENDROWNUM} 
+		 ) LIST
+ WHERE RNUM  &gt;  #{BEGINROWNUM}
+</select> 
+
+<select id="selectMonthCourseListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT
+  FROM V_HR_COURSE_SQ HCS, V_HR_COURSE HC
+ WHERE HCS.COMPANY_CD  = HC.COMPANY_CD
+   AND HCS.COURSE_CODE = HC.COURSE_CODE
+<if test="S_COMPANY_CD_ES != ''">
+	AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HCS.COMPANY_CD IN (">
+		#{S_COMPANY_CD_item}
+	</foreach>
+</if>	  									-- 회사 코드
+<if test="S_COURSE_CODE_ES != ''">
+	AND <foreach collection="S_COURSE_CODE_ES" item="item" separator="," close=")" open=" HCS.COURSE_CODE IN (">
+		#{S_COURSE_CODE_item}
+	</foreach>
+</if>										-- 과정코드
+<if test="S_COURSE_NAME_ES != ''">
+	AND <foreach collection="S_COURSE_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+		REPLACE(UPPER(HC.COURSE_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_COURSE_NAME_item}),' ','')||'%'
+	</foreach>
+</if>										-- 과정명                      
+<if test="S_COURSE_SQ != ''">                 	-- 과정차수 
+		AND HCS.COURSE_SQ          = #{S_COURSE_SQ}                                  
+</if>
+   AND HC.USE_YN       = 'Y'
+   AND HCS.START_DT LIKE TO_CHAR(SYSDATE, 'YYYYMM')||'%'
+   AND HCS.END_DT LIKE TO_CHAR(SYSDATE, 'YYYYMM')||'%'
+</select>
+
+
+<select id="selectClassifyList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HCS.COMPANY_CD, HCS.EDU_YEAR , CODE.CLASSIFY_CODE1, CODE.CLASSIFY_CODE1_NM, CODE.CLASSIFY_CODE2, CODE.CLASSIFY_CODE2_NM,
+       NVL(HCS.SQ_YEAR_CNT, 0) SQ_YEAR_CNT, NVL(HCS.SQ_MONTH_CNT, 0) SQ_MONTH_CNT, NVL(HC.COURSE_YEAR_CNT, 0) COURSE_YEAR_CNT, NVL(HC.COURSE_MONTH_CNT, 0) COURSE_MONTH_CNT,
+       F_COURSE_MEMBER_CNT( HCS.COMPANY_CD, HCS.EDU_YEAR, HCS.CLASSIFY_CODE1, HCS.CLASSIFY_CODE2, 'ALL') APPLY_CNT,
+       F_COURSE_MEMBER_CNT( HCS.COMPANY_CD, HCS.EDU_YEAR, HCS.CLASSIFY_CODE1, HCS.CLASSIFY_CODE2, 'Y') PASS_CNT
+  FROM (SELECT C1.CODE CLASSIFY_CODE1, C1.CODE_NM CLASSIFY_CODE1_NM, C2.CODE CLASSIFY_CODE2, C2.CODE_NM CLASSIFY_CODE2_NM
+          FROM (SELECT COMPANY_CD, CODE, CODE_NM, USEDEF5
+          FROM CODET
+         WHERE COMPANY_CD = #{COMPANY_CD}
+           AND UPCD = 'C09' ) C1,
+        (SELECT COMPANY_CD, CODE, CODE_NM, USEDEF5
+          FROM CODET
+         WHERE COMPANY_CD = #{COMPANY_CD}
+           AND UPCD = 'C10') C2
+         WHERE C1.COMPANY_CD = C2.COMPANY_CD
+           AND C2.USEDEF5  LIKE C1.USEDEF5||'%') CODE,
+       (SELECT HCS.COMPANY_CD, HCS.EDU_YEAR , CLASSIFY_CODE1, CLASSIFY_CODE2, COUNT( START_YMD ) SQ_YEAR_CNT, COUNT( SQ_MONTH ) SQ_MONTH_CNT
+         FROM (SELECT HCS.COMPANY_CD, HCS.EDU_YEAR ,
+                      (SELECT CLASSIFY_CODE1 FROM V_HR_COURSE WHERE COMPANY_CD = HCS.COMPANY_CD AND COURSE_CODE = HCS.COURSE_CODE )  CLASSIFY_CODE1,
+                      (SELECT CLASSIFY_CODE2 FROM V_HR_COURSE WHERE COMPANY_CD = HCS.COMPANY_CD AND COURSE_CODE = HCS.COURSE_CODE )  CLASSIFY_CODE2,
+                      (SELECT REGI_DT FROM V_HR_COURSE WHERE COMPANY_CD = HCS.COMPANY_CD AND COURSE_CODE = HCS.COURSE_CODE )  REGI_DT,
+                      CASE WHEN HCS.START_YMD &gt;= TO_CHAR(SYSDATE, 'YYYY')||'0101' THEN 1 ELSE NULL END START_YMD,
+                      CASE WHEN SUBSTR(HCS.START_YMD,0,6) = TO_CHAR(SYSDATE, 'YYYYMM') THEN 1 ELSE NULL END  SQ_MONTH
+                 FROM V_HR_COURSE_SQ HCS
+                WHERE HCS.COMPANY_CD  = #{COMPANY_CD}
+                  AND HCS.EDU_YEAR  = TO_CHAR(SYSDATE, 'YYYY')
+                  AND HCS.START_YMD &gt;= TO_CHAR(SYSDATE, 'YYYY')||'0101'
+                  AND HCS.START_YMD &lt;= TO_CHAR(LAST_DAY(SYSDATE), 'YYYYMMDD') )  HCS
+       GROUP BY HCS.COMPANY_CD, HCS.EDU_YEAR , CLASSIFY_CODE1, CLASSIFY_CODE2) HCS,
+      (SELECT CLASSIFY_CODE1, CLASSIFY_CODE2, COUNT(CASE WHEN TO_CHAR(HC.REGI_DT,'YYYYMMDD') &gt;= TO_CHAR(SYSDATE, 'YYYY')||'0101' THEN 1 ELSE NULL END) COURSE_YEAR_CNT,
+             COUNT(CASE WHEN TO_CHAR(HC.REGI_DT,'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM') THEN 1 ELSE NULL END)  COURSE_MONTH_CNT
+        FROM V_HR_COURSE HC
+       WHERE HC.COMPANY_CD  = #{COMPANY_CD}
+         AND HC.REGI_DT &gt;= TO_DATE(TO_CHAR(SYSDATE, 'YYYY')||'0101', 'YYYYMMDD')
+      GROUP BY HC.COMPANY_CD, CLASSIFY_CODE1, CLASSIFY_CODE2) HC
+WHERE CODE.CLASSIFY_CODE1 = HCS.CLASSIFY_CODE1(+)
+  AND CODE.CLASSIFY_CODE2 = HCS.CLASSIFY_CODE2(+)
+  AND CODE.CLASSIFY_CODE1 = HC.CLASSIFY_CODE1(+)
+  AND CODE.CLASSIFY_CODE2 = HC.CLASSIFY_CODE2(+)
+</select>
+
+<select id="selectClassifyListDeprecated" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT HCS.COMPANY_CD, HCS.EDU_YEAR , CLASSIFY_CODE1, CLASSIFY_CODE2,
+       (SELECT CODE_NM FROM CODET WHERE COMPANY_CD = HCS.COMPANY_CD AND CODE = HCS.CLASSIFY_CODE1 ) CLASSIFY_CODE1_NM,
+       (SELECT CODE_NM FROM CODET WHERE COMPANY_CD = HCS.COMPANY_CD AND CODE = HCS.CLASSIFY_CODE2 ) CLASSIFY_CODE2_NM,
+       COUNT(CASE WHEN TO_CHAR(HCS.REGI_DT,'YYYYMMDD')  &gt;= TO_CHAR(SYSDATE, 'YYYY')||'0101' THEN 1 ELSE NULL END)  COURSE_YEAR_CNT,
+       COUNT(CASE WHEN TO_CHAR(HCS.REGI_DT,'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM') THEN 1 ELSE NULL END)  COURSE_MONTH_CNT,
+       COUNT( START_YMD ) SQ_YEAR_CNT, COUNT( SQ_MONTH ) SQ_MONTH_CNT
+      ,F_COURSE_MEMBER_CNT( HCS.COMPANY_CD, HCS.EDU_YEAR, HCS.CLASSIFY_CODE1, HCS.CLASSIFY_CODE2, 'ALL') APPLY_CNT,
+       F_COURSE_MEMBER_CNT( HCS.COMPANY_CD, HCS.EDU_YEAR, HCS.CLASSIFY_CODE1, HCS.CLASSIFY_CODE2, 'Y') PASS_CNT
+  FROM (SELECT HCS.COMPANY_CD, HCS.EDU_YEAR ,
+               (SELECT CLASSIFY_CODE1 FROM V_HR_COURSE WHERE COMPANY_CD = HCS.COMPANY_CD AND COURSE_CODE = HCS.COURSE_CODE )  CLASSIFY_CODE1,
+               (SELECT CLASSIFY_CODE2 FROM V_HR_COURSE WHERE COMPANY_CD = HCS.COMPANY_CD AND COURSE_CODE = HCS.COURSE_CODE )  CLASSIFY_CODE2,
+               (SELECT REGI_DT FROM V_HR_COURSE WHERE COMPANY_CD = HCS.COMPANY_CD AND COURSE_CODE = HCS.COURSE_CODE )  REGI_DT,
+               CASE WHEN HCS.START_YMD  &gt;= TO_CHAR(SYSDATE, 'YYYY')||'0101' THEN 1 ELSE NULL END START_YMD,
+               CASE WHEN SUBSTR(HCS.START_YMD,0,6) = TO_CHAR(SYSDATE, 'YYYYMM') THEN 1 ELSE NULL END  SQ_MONTH
+          FROM V_HR_COURSE_SQ HCS
+         WHERE HCS.COMPANY_CD  = #{COMPANY_CD}
+           AND HCS.EDU_YEAR  = TO_CHAR(SYSDATE, 'YYYY')
+           AND HCS.START_YMD  &gt;= TO_CHAR(SYSDATE, 'YYYY')||'0101'
+           AND HCS.START_YMD  &lt;= TO_CHAR(LAST_DAY(SYSDATE), 'YYYYMMDD') )  HCS
+GROUP BY HCS.COMPANY_CD, HCS.EDU_YEAR , CLASSIFY_CODE1, CLASSIFY_CODE2
+</select>
+
+
+
+<select id="selectTableColumnList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT   OWNER          ,
+         TABLE_NAME     ,
+         COLUMN_NAME    ,
+         COLUMN_ID      ,
+         COLUMN_TITLE   ,
+         DATA_LENGTH    ,
+         MIN_VALUE      ,
+         MAX_VALUE      ,
+         DATA_TYPE      ,
+         PK_IDX         ,
+         NOTNULL_YN     ,
+         CODE           ,
+         CODE_COLUMN    ,
+         DATA_DEFAULT  
+  FROM S_COLUMN_INFO
+ WHERE OWNER = 'SCPPKG'
+   AND TABLE_NAME = #{TABLE_NAME}
+</select>
+
+</mapper>

@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:25 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataBase">
+
+<!--  DataBase사용자 -->
+<select id="selectDataBaseUser" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE , '-전체-' CODE_NAME
+  FROM S_DUAL C
+UNION ALL
+		</if>
+		
+SELECT 'GLMS' CODE , 'GLMS' CODE_NAME
+  FROM S_DUAL C
+UNION ALL
+SELECT 'GLMS2' CODE , 'GLMS2' CODE_NAME
+  FROM S_DUAL C
+/*
+SELECT DISTINCT  OWNER CODE,  OWNER NAME
+  FROM ALL_TAB_COMMENTS
+ WHERE OWNER NOT IN ('XDB','SYSTEM','SYS','OUTLN', 'DBSNMP')
+ */
+</select>
+
+<select id="selectTableListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+SELECT COUNT(*) CNT
+ FROM (
+SELECT OWNER, TABLE_NAME, TABLE_TYPE, COMMENTS,
+       (SELECT COUNT(*) FROM ALL_TAB_COLUMNS WHERE  OWNER = ATC.OWNER AND TABLE_NAME = ATC.TABLE_NAME ) COLUMN_CNT,
+       ( SELECT COUNT(*)
+          FROM ALL_CONSTRAINTS X, ALL_CONS_COLUMNS Y
+         WHERE X.OWNER=ATC.OWNER
+			AND X.TABLE_NAME=ATC.TABLE_NAME
+			AND X.CONSTRAINT_TYPE = 'P'
+			AND X.CONSTRAINT_NAME = Y.CONSTRAINT_NAME
+			AND Y.OWNER = X.OWNER
+			AND Y.TABLE_NAME = ATC.TABLE_NAME)  PK_CNT
+  FROM ALL_TAB_COMMENTS    ATC
+ WHERE 1=1 
+ <if test="S_OWNER != ''"> 
+   AND OWNER  = #{S_OWNER}
+ </if>
+   AND TABLE_NAME NOT LIKE 'BIN%' 
+   -- AND OWNER NOT IN ('XDB','SYSTEM','SYS','OUTLN', 'DBSNMP')
+   AND OWNER IN ('GLMS','GLMS2')
+
+ <if test="S_TABLE_NAME_ES != ''">
+	AND <foreach collection="S_TABLE_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+		REPLACE(UPPER(TABLE_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_TABLE_NAME_item}),' ','')||'%'
+	</foreach>
+ </if> <if test="S_COMMENT_NAME_ES != ''">
+	AND <foreach collection="S_COMMENT_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+		REPLACE(UPPER(COMMENTS),' ','') LIKE '%'|| REPLACE(UPPER(#{S_COMMENT_NAME_item}),' ','')||'%'
+	</foreach>
+ </if>
+
+)
+</select>
+
+<select id="selectTableList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT LIST.*
+  FROM (SELECT ROWNUM RNUM, SUB.*
+          FROM (SELECT OWNER, TABLE_NAME, TABLE_TYPE, COMMENTS,
+                      (SELECT COUNT(*) FROM ALL_TAB_COLUMNS WHERE  OWNER = ATC.OWNER AND TABLE_NAME = ATC.TABLE_NAME ) AS COLUMN_CNT,
+                      (SELECT COUNT(*)
+                         FROM ALL_CONSTRAINTS X, ALL_CONS_COLUMNS Y
+                        WHERE X.OWNER=ATC.OWNER
+                		  AND X.TABLE_NAME=ATC.TABLE_NAME
+                		  AND X.CONSTRAINT_TYPE = 'P'
+                		  AND X.CONSTRAINT_NAME = Y.CONSTRAINT_NAME
+                		  AND Y.OWNER = X.OWNER
+                		  AND Y.TABLE_NAME = ATC.TABLE_NAME) AS PK_CNT
+                 FROM ALL_TAB_COMMENTS    ATC
+                WHERE  1 = 1
+                <if test="S_OWNER != ''"> 
+                  AND OWNER  = #{S_OWNER}
+                </if>
+                  AND TABLE_NAME NOT LIKE 'BIN%' 
+   -- AND OWNER NOT IN ('XDB','SYSTEM','SYS','OUTLN', 'DBSNMP')
+   AND OWNER IN ('GLMS','GLMS2')
+
+ <if test="S_TABLE_NAME_ES != ''">
+	AND <foreach collection="S_TABLE_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+		REPLACE(UPPER(TABLE_NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_TABLE_NAME_item}),' ','')||'%'
+	</foreach>
+ </if> 
+ <if test="S_COMMENT_NAME_ES != ''">
+	AND <foreach collection="S_COMMENT_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+		REPLACE(UPPER(COMMENTS),' ','') LIKE '%'|| REPLACE(UPPER(#{S_COMMENT_NAME_item}),' ','')||'%'
+	</foreach>
+ </if>
+
+	<if test="SORT != ''"> ORDER BY ${SORT}  ${DIR}	</if>
+	<if test="SORT == ''"> ORDER BY OWNER 	</if>
+                  ) SUB
+		 WHERE ROWNUM  &lt;  #{ENDROWNUM}
+      	) LIST
+ WHERE RNUM  &gt;  #{BEGINROWNUM}
+</select>
+
+   
+<select id="selectColumnList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT A.OWNER, B.TABLE_NAME, (SELECT COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = A.OWNER AND TABLE_NAME = B.TABLE_NAME ) TABLE_COMMENTS,
+       REPLACE(INITCAP(A.TABLE_NAME),'_','') AS TABLE_NAME_CAP	,
+       B.COLUMN_ID, A.COLUMN_NAME, A.COMMENTS, B.DATA_TYPE,  REPLACE(TRANSLATE(INITCAP(B.TABLE_NAME), B.TABLE_NAME||'abcdefghijklmnopqrstuvwxyz',B.TABLE_NAME),'_','') TABLE_AS,
+       ( SELECT MAX(LENGTH(COLUMN_NAME)) FROM ALL_COL_COMMENTS WHERE OWNER       = A.OWNER
+            AND TABLE_NAME  = A.TABLE_NAME  ) MAX_COL_NAME_LENGTH,
+       DECODE(B.DATA_TYPE,'DATE','','CLOB', 'CLOB',  NVL(DATA_PRECISION,'')||
+       		NVL(CHAR_COL_DECL_LENGTH,'') ) ||
+       		DECODE(NVL(DATA_SCALE,'0'),'0','',','
+       		||DATA_SCALE) DATA_LENGTH,
+		DECODE(B.NULLABLE,'N','N', '') DATA_NULL,
+		( SELECT 'PK_'||Y.POSITION
+          FROM ALL_CONSTRAINTS X, ALL_CONS_COLUMNS Y
+         WHERE X.OWNER=B.OWNER
+			AND X.TABLE_NAME=B.TABLE_NAME
+			AND X.CONSTRAINT_TYPE = 'P'
+			AND X.CONSTRAINT_NAME = Y.CONSTRAINT_NAME
+			AND Y.OWNER = B.OWNER
+			AND Y.TABLE_NAME = B.TABLE_NAME
+			AND Y.COLUMN_NAME = B.COLUMN_NAME ) IDX_POSITION, B.DATA_DEFAULT
+ FROM  ALL_COL_COMMENTS A,    ALL_TAB_COLUMNS B
+ WHERE A.OWNER       = B.OWNER
+   AND A.TABLE_NAME  = B.TABLE_NAME
+   AND A.OWNER       = #{OWNER}
+   AND B.TABLE_NAME  IN  UPPER(#{TABLE_NAME})
+    AND A.COLUMN_NAME =  B.COLUMN_NAME
+ ORDER BY B.TABLE_NAME, IDX_POSITION, B.COLUMN_ID
+</select>
+
+<select id="selectConstraintsList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT Y.COLUMN_NAME, X.CONSTRAINT_TYPE, X.SEARCH_CONDITION
+  FROM ALL_CONSTRAINTS X, ALL_CONS_COLUMNS Y
+ WHERE X.OWNER           = Y.OWNER
+   AND X.TABLE_NAME      = Y.TABLE_NAME
+   AND X.CONSTRAINT_NAME = Y.CONSTRAINT_NAME
+   AND Y.OWNER           = #{OWNER}
+   AND Y.TABLE_NAME      = #{TABLE_NAME}
+</select>
+
+
+<select id="selectJoinTableAlias" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+	SELECT OWNER, TABLE_NAME, REPLACE(TRANSLATE(INITCAP(B.TABLE_NAME), B.TABLE_NAME||'abcdefghijklmnopqrstuvwxyz',B.TABLE_NAME),'_','') TABLE_AS, COMMENTS,
+	       MAX(LENGTH(TABLE_NAME)) TABLE_NAME_LENGTH , REPLACE(INITCAP(B.TABLE_NAME),'_','') TABLE_AS_CAMEL
+	  FROM ALL_TAB_COMMENTS B
+	 WHERE 1=1 
+	   AND B.OWNER IN (''
+	 <foreach collection="OWNER_ES" item="item" separator=", " open=" ,">
+		       #{OWNER_item}
+	</foreach> )
+	   AND B.TABLE_NAME IN  (''
+	 <foreach collection="TABLE_NAME_ES" item="item" separator=", " open=" ,">
+		       #{TABLE_NAME_item}
+	</foreach> )
+     GROUP BY OWNER, TABLE_NAME, COMMENTS, LENGTH(TABLE_NAME)
+
+</select>
+
+
+<select id="selectJoinTableAliasFrom" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+	 <foreach collection="TABLE_INFO" item="item" separator=" UNION ALL ">
+	SELECT OWNER, #{ORDER_TABLE_item} TABLE_ORDER, TABLE_NAME, REPLACE(INITCAP(B.TABLE_NAME),'_','') TABLE_AS_CAMEL,
+	       nvl(#{TABLE_AS_TABLE_item}, REPLACE(TRANSLATE(INITCAP(TABLE_NAME), TABLE_NAME||'abcdefghijklmnopqrstuvwxyz',TABLE_NAME),'_','')) TABLE_AS, COMMENTS
+	  FROM ALL_TAB_COMMENTS B
+	 WHERE 1=1 
+	   AND B.OWNER = #{TABLE_OWNER_TABLE_item}
+	   AND B.TABLE_NAME = #{TABLE_item}  
+	</foreach> 
+
+ORDER BY TABLE_ORDER, OWNER, TABLE_NAME
+</select>
+
+
+<select id="selectJoinTableMaxColumnLength" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT T_LENGTH, T_AS_LENGTH, MAX_COL_NAME_LENGTH
+  FROM (
+	SELECT MAX(T_AS_LENGTH) T_AS_LENGTH, MAX(T_LENGTH) T_LENGTH
+      FROM ( <foreach collection="TABLE_INFO" item="item" separator=" UNION ALL ">
+	        	SELECT LENGTH(#{TABLE_AS_TABLE_item}) T_AS_LENGTH, LENGTH(#{TABLE_item}) T_LENGTH  FROM S_DUAL
+	          </foreach>)
+	 ) T_L, (
+	SELECT MAX(LENGTH(COLUMN_NAME))  MAX_COL_NAME_LENGTH
+	  FROM ALL_TAB_COLUMNS B
+	 WHERE 1=1 
+	   AND B.OWNER IN (''
+	 <foreach collection="OWNER_INFO" item="item" separator=", " open=" ,">
+		       #{OWNER_item}
+	</foreach> )
+	   AND B.TABLE_NAME IN  (''
+	 <foreach collection="TABLE_INFO" item="item" separator=", " open=" ,">
+		       #{TABLE_item}
+	</foreach> ) )
+</select>
+
+<select id="selectColumnListForJoin" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+	 <foreach collection="TABLE_INFO" item="item" separator=" UNION ALL ">
+SELECT A.OWNER, #{ORDER_TABLE_item} TABLE_ORDER, B.TABLE_NAME, (SELECT COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = A.OWNER AND TABLE_NAME = B.TABLE_NAME ) TABLE_COMMENTS,
+       REPLACE(INITCAP(A.TABLE_NAME),'_','') AS TABLE_NAME_CAP	,
+       B.COLUMN_ID, A.COLUMN_NAME, A.COMMENTS, B.DATA_TYPE,  
+       nvl(#{TABLE_AS_TABLE_item}, REPLACE(TRANSLATE(INITCAP(B.TABLE_NAME), B.TABLE_NAME||'abcdefghijklmnopqrstuvwxyz',B.TABLE_NAME),'_',''))  TABLE_AS,
+       ( SELECT MAX(LENGTH(COLUMN_NAME)) FROM ALL_COL_COMMENTS WHERE OWNER       = A.OWNER
+            AND TABLE_NAME  = A.TABLE_NAME  ) MAX_COL_NAME_LENGTH,
+       DECODE(B.DATA_TYPE,'DATE','','CLOB', 'CLOB',  NVL(DATA_PRECISION,'')||
+       		NVL(CHAR_COL_DECL_LENGTH,'') ) ||
+       		DECODE(NVL(DATA_SCALE,'0'),'0','',','
+       		||DATA_SCALE) DATA_LENGTH,
+		DECODE(B.NULLABLE,'N','N', '') DATA_NULL,
+		( SELECT 'PK_'||Y.POSITION
+          FROM ALL_CONSTRAINTS X, ALL_CONS_COLUMNS Y
+         WHERE X.OWNER=B.OWNER
+			AND X.TABLE_NAME=B.TABLE_NAME
+			AND X.CONSTRAINT_TYPE = 'P'
+			AND X.CONSTRAINT_NAME = Y.CONSTRAINT_NAME
+			AND Y.OWNER = B.OWNER
+			AND Y.TABLE_NAME = B.TABLE_NAME
+			AND Y.COLUMN_NAME = B.COLUMN_NAME ) IDX_POSITION, B.DATA_DEFAULT
+ FROM  ALL_COL_COMMENTS A,    ALL_TAB_COLUMNS B
+ WHERE A.OWNER       = B.OWNER
+   AND A.TABLE_NAME  = B.TABLE_NAME
+   AND A.OWNER       = #{TABLE_OWNER_TABLE_item}
+   AND B.TABLE_NAME  = #{TABLE_item}  
+   AND A.COLUMN_NAME =  B.COLUMN_NAME
+	</foreach>
+ 
+ ORDER BY TABLE_ORDER, OWNER, TABLE_NAME, IDX_POSITION, COLUMN_ID
+</select>
+
+
+<select id="selectJoinColumnList" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+	 <foreach collection="INFO" item="item" separator=" UNION ALL ">
+SELECT  OWNER, TABLE_NAME, TABLE_COMMENTS, TABLE_NAME_CAP	,COLUMN_ID, COMMENTS, DATA_TYPE,
+        TABLE_AS, MAX_COL_NAME_LENGTH,  DATA_NULL, IDX_POSITION, DATA_DEFAULT,
+        NVL2(#{JOIN_LEFT_OWNER_item}, OWNER_NAME||'_'||TABLE_AS||'.'||COLUMN_NAME, TABLE_AS||'.'||COLUMN_NAME) COLUMN_NAME, J_COLUMN_NAME,   COMMENTS,
+        NVL2(#{JOIN_LEFT_OWNER_item}, LENGTH(OWNER_NAME||'_'||TABLE_AS),  LENGTH(TABLE_AS||'.'))+COL_LENGTH  LENGTH
+  FROM (
+SELECT A.OWNER, B.TABLE_NAME, (SELECT COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = A.OWNER AND TABLE_NAME = B.TABLE_NAME ) TABLE_COMMENTS,
+       REPLACE(INITCAP(A.TABLE_NAME),'_','') AS TABLE_NAME_CAP	,
+       B.COLUMN_ID, A.COLUMN_NAME, A.COMMENTS, B.DATA_TYPE, 
+       nvl(#{LEFT_TABLE_AS_item}, REPLACE(TRANSLATE(INITCAP(B.TABLE_NAME), B.TABLE_NAME||'abcdefghijklmnopqrstuvwxyz',B.TABLE_NAME),'_','')) TABLE_AS,
+       ( SELECT MAX(LENGTH(COLUMN_NAME)) FROM ALL_COL_COMMENTS WHERE OWNER       = A.OWNER
+            AND TABLE_NAME  = A.TABLE_NAME  ) MAX_COL_NAME_LENGTH,
+       DECODE(B.DATA_TYPE,'DATE','','CLOB', 'CLOB',  NVL(DATA_PRECISION,'')||
+       		NVL(CHAR_COL_DECL_LENGTH,'') ) ||
+       		DECODE(NVL(DATA_SCALE,'0'),'0','',','
+       		||DATA_SCALE) DATA_LENGTH,
+		DECODE(B.NULLABLE,'N','N', '') DATA_NULL,
+		( SELECT 'PK_'||Y.POSITION
+          FROM ALL_CONSTRAINTS X, ALL_CONS_COLUMNS Y
+         WHERE X.OWNER=B.OWNER
+			AND X.TABLE_NAME=B.TABLE_NAME
+			AND X.CONSTRAINT_TYPE = 'P'
+			AND X.CONSTRAINT_NAME = Y.CONSTRAINT_NAME
+			AND Y.OWNER = B.OWNER
+			AND Y.TABLE_NAME = B.TABLE_NAME
+			AND Y.COLUMN_NAME = B.COLUMN_NAME ) IDX_POSITION, B.DATA_DEFAULT,
+	   REPLACE(TRANSLATE(INITCAP(A.OWNER), A.OWNER||'abcdefghijklmnopqrstuvwxyz',A.OWNER),'_','')  OWNER_NAME,
+       ( SELECT MAX(LENGTH(COLUMN_NAME)+2) 
+           FROM ALL_COL_COMMENTS 
+          WHERE OWNER       = A.OWNER
+            AND TABLE_NAME  = A.TABLE_NAME  ) COL_LENGTH,
+       (SELECT nvl(#{RIGHT_TABLE_AS_item},REPLACE(TRANSLATE(INITCAP(TABLE_NAME), TABLE_NAME||'abcdefghijklmnopqrstuvwxyz',TABLE_NAME),'_',''))||'.'||COLUMN_NAME
+          FROM ALL_TAB_COLUMNS
+         WHERE OWNER = nvl(#{JOIN_RIGTH_OWNER_item},#{RIGTH_OWNER_item})
+           AND COLUMN_NAME = B.COLUMN_NAME
+           AND TABLE_NAME  = #{JOIN_RIGTH_TABLE_NAME_item} ) J_COLUMN_NAME
+  FROM  ALL_COL_COMMENTS A,    ALL_TAB_COLUMNS B
+ WHERE A.OWNER       = B.OWNER
+   AND A.TABLE_NAME  = B.TABLE_NAME
+   AND A.OWNER       = #{LEFT_OWNER_item}
+   AND A.TABLE_NAME  = #{JOIN_LEFT_TABLE_NAME_item}
+   AND A.COLUMN_NAME =  B.COLUMN_NAME
+   AND A.COLUMN_NAME NOT IN ('REGI_DT', 'REGI_NO','MODI_DT','MODI_NO' ) ) 
+	</foreach>
+ 
+</select>
+
+<select id="selectSubQueryColumnList" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+	 <foreach collection="SUB_INFO" item="item" separator=" UNION ALL ">
+SELECT  OWNER, TABLE_NAME, TABLE_COMMENTS, TABLE_NAME_CAP	,COLUMN_ID, COMMENTS, DATA_TYPE,
+        TABLE_AS, MAX_COL_NAME_LENGTH,  DATA_NULL, IDX_POSITION, DATA_DEFAULT,
+        NVL2(#{SUB_WHERE_OWNER_SUB_item}, OWNER_NAME||'_'||TABLE_AS||'.'||COLUMN_NAME, TABLE_AS||'.'||COLUMN_NAME) COLUMN_NAME, SUB_FROM, SUB_FROM_AS, J_COLUMN_NAME,   COMMENTS,
+        NVL2(#{SUB_WHERE_OWNER_SUB_item}, LENGTH(OWNER_NAME||'_'||TABLE_AS),  LENGTH(TABLE_AS||'.'))+COL_LENGTH  LENGTH
+  FROM (
+SELECT A.OWNER, B.TABLE_NAME, (SELECT COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = A.OWNER AND TABLE_NAME = B.TABLE_NAME ) TABLE_COMMENTS,
+       REPLACE(INITCAP(A.TABLE_NAME),'_','') AS TABLE_NAME_CAP	,
+       B.COLUMN_ID, A.COLUMN_NAME, A.COMMENTS, B.DATA_TYPE, 
+       nvl(#{SUB_TABLE_AS_SUB_item}, REPLACE(TRANSLATE(INITCAP(B.TABLE_NAME), B.TABLE_NAME||'abcdefghijklmnopqrstuvwxyz',B.TABLE_NAME),'_','')) TABLE_AS,
+       ( SELECT MAX(LENGTH(COLUMN_NAME)) FROM ALL_COL_COMMENTS WHERE OWNER       = A.OWNER
+            AND TABLE_NAME  = A.TABLE_NAME  ) MAX_COL_NAME_LENGTH,
+       DECODE(B.DATA_TYPE,'DATE','','CLOB', 'CLOB',  NVL(DATA_PRECISION,'')||
+       		NVL(CHAR_COL_DECL_LENGTH,'') ) ||
+       		DECODE(NVL(DATA_SCALE,'0'),'0','',','
+       		||DATA_SCALE) DATA_LENGTH,
+		DECODE(B.NULLABLE,'N','N', '') DATA_NULL,
+		( SELECT 'PK_'||Y.POSITION
+          FROM ALL_CONSTRAINTS X, ALL_CONS_COLUMNS Y
+         WHERE X.OWNER=B.OWNER
+			AND X.TABLE_NAME=B.TABLE_NAME
+			AND X.CONSTRAINT_TYPE = 'P'
+			AND X.CONSTRAINT_NAME = Y.CONSTRAINT_NAME
+			AND Y.OWNER = B.OWNER
+			AND Y.TABLE_NAME = B.TABLE_NAME
+			AND Y.COLUMN_NAME = B.COLUMN_NAME ) IDX_POSITION, B.DATA_DEFAULT,
+	   REPLACE(TRANSLATE(INITCAP(A.OWNER), A.OWNER||'abcdefghijklmnopqrstuvwxyz',A.OWNER),'_','')  OWNER_NAME,
+       ( SELECT MAX(LENGTH(COLUMN_NAME)+2) 
+           FROM ALL_COL_COMMENTS 
+          WHERE OWNER       = A.OWNER
+            AND TABLE_NAME  = A.TABLE_NAME  ) COL_LENGTH,
+       #{SUB_SELECT_TABLE_SUB_item} SUB_FROM,
+       nvl(#{SUB_SELECT_TABLE_AS_SUB_item},REPLACE(TRANSLATE(INITCAP(#{SUB_SELECT_TABLE_SUB_item}), #{SUB_SELECT_TABLE_SUB_item}||'abcdefghijklmnopqrstuvwxyz',#{SUB_SELECT_TABLE_SUB_item}),'_','')) SUB_FROM_AS,
+       (SELECT COLUMN_NAME
+          FROM ALL_TAB_COLUMNS
+         WHERE OWNER = nvl(#{SUB_SELECT_OWNER_SUB_item},#{SUB_OWNER_SUB_item})
+           AND COLUMN_NAME = B.COLUMN_NAME
+           AND TABLE_NAME  = #{SUB_SELECT_TABLE_SUB_item} ) J_COLUMN_NAME
+  FROM  ALL_COL_COMMENTS A,    ALL_TAB_COLUMNS B
+ WHERE A.OWNER       = B.OWNER
+   AND A.TABLE_NAME  = B.TABLE_NAME
+   AND A.OWNER       = #{WHERE_OWNER_SUB_item}
+   AND A.TABLE_NAME  = #{SUB_TABLE_NAME_SUB_item}
+   AND A.COLUMN_NAME =  B.COLUMN_NAME
+   AND A.COLUMN_NAME NOT IN ('REGI_DT', 'REGI_NO','MODI_DT','MODI_NO' ) ) 
+	</foreach>
+ 
+</select>
+
+</mapper>

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:23 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BasePopup">
+
+
+<!-- 
+	부서목록(수)조회
+ -->
+<select id="selectDeptListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) CNT
+                      FROM HHRMEDUDEPT02_T H02T , HHRMEDUDEPT01_T H01T
+                     WHERE H02T.COMPCD = H01T.COMPCD
+                       AND H02T.ENDGBN = H01T.ENDGBN
+                       AND H02T.ORGID = H01T.ORGID
+                       AND H02T.COMPCD = 'C40'
+                       AND H01T.CURORGYN = 'Y'
+                       AND H02T.ENDGBN = #{ENDGBN}
+       <if test="BICD != ''">
+      AND H02T.BICD    = #{BICD}  
+       </if>
+       <if test="DEPTLVL != ''">
+      AND H02T.DEPTLVL    = #{DEPTLVL}  
+       </if>
+	  AND UPPER(REPLACE(H02T.DEPTNM,' ',''))    LIKE '%'||UPPER(REPLACE(#{DEPTNM},' ',''))||'%'
+       <if test="DEPTENGNM != ''">
+	  AND UPPER(REPLACE(H02T.DEPTENGNM,' ','')) LIKE '%'||UPPER(REPLACE(#{DEPTENGNM},' ',''))||'%'
+       </if>
+</select>
+
+<!-- 
+	부서목록조회
+ -->
+<select id="selectDeptList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.* FROM (SELECT ROWNUM RN, AA.* FROM 
+	( SELECT H02T.ENDGBN, H02T.ENDGBNNM, H02T.ORGID, H02T.DEPTCD, H02T.DEPTNM DEPTNM, H02T.DEPTENGNM, H02T.DEPTPOSNO, 
+	         H02T.PARENTDEPTCD, H02T.DEPTLVL, H02T.DEPTSEQ, H02T.BICD, H02T.DHEMPID, H02T.DHNAME
+	  FROM HHRMEDUDEPT02_T H02T , HHRMEDUDEPT01_T H01T
+                     WHERE H02T.COMPCD = H01T.COMPCD
+                       AND H02T.ENDGBN = H01T.ENDGBN
+                       AND H02T.ORGID = H01T.ORGID
+                       AND H02T.COMPCD = 'C40'
+                       AND H02T.ENDGBN = #{ENDGBN}
+                       AND H01T.CURORGYN = 'Y'
+       <if test="BICD != ''">
+      AND H02T.BICD    = #{BICD}  
+       </if>
+       <if test="DEPTLVL != ''">
+      AND H02T.DEPTLVL    = #{DEPTLVL}  
+       </if>
+	  AND UPPER(REPLACE(H02T.DEPTNM,' ',''))    LIKE '%'||UPPER(REPLACE(#{DEPTNM},' ',''))||'%'
+       <if test="DEPTENGNM != ''">
+	  AND UPPER(REPLACE(H02T.DEPTENGNM,' ','')) LIKE '%'||UPPER(REPLACE(#{DEPTENGNM},' ',''))||'%'
+       </if>
+	ORDER BY H02T.DEPTLVL, H02T.DEPTNM ) AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+	) BB
+ WHERE BB.RN  &gt;  #{BEGINROWNUM}	
+	
+</select>
+
+<!-- 
+	사원목록(수) 조회
+ -->
+<select id="selectEmpListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) CNT
+  FROM HHRMEDUMASTER01_T
+ WHERE COMPCD = 'C40'
+   AND INCUMBCD LIKE 'A%'  -- 현재 재직자 
+   AND ENDGBN = #{ENDGBN}
+   AND UPPER( REPLACE(NAME,' ',''))   LIKE #{NAME}||'%'
+   AND UPPER( REPLACE(DEPTNM,' ','')) LIKE #{DEPTNM}||'%'	
+</select>
+
+<!-- 
+	사원목록 조회
+ -->
+<select id="selectEmpList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.* FROM (SELECT ROWNUM RN, AA.* FROM (
+SELECT H01T.COMPCD     
+      ,H01T.ABROADGBN  
+      ,H01T.ABROADGBNM 
+      ,H01T.CTR        
+      ,H01T.CTRNM      
+      ,H01T.ENDGBN     
+      ,H01T.ENDGBNNM   
+      ,H01T.LOCATECD   
+      ,H01T.LOCATENM   
+      ,H01T.CORPGBN    
+      ,H01T.EMPID      
+      ,H01T.NAME       
+      ,H01T.DEPTCD     
+      ,H01T.DEPTNM     
+      ,H01T.DEPTPOSNO  
+      ,H01T.MADEPTCD   
+      ,H01T.MADEPTNM   
+      ,H01T.JOBGRDCD   
+      ,H01T.JOBGRDNM   
+      ,H01T.MAJOBGRDCD 
+      ,H01T.MAJOBGRDNM 
+      ,H01T.FRCD       
+      ,H01T.FRNM       
+      ,H01T.PRODUCT    
+      ,H01T.PRODUCTNM  
+      ,H01T.PJOBGRPCD  
+      ,H01T.PJOBGRPNM  
+      ,H01T.OCCTGCD    
+      ,H01T.OCCTGNM    
+      ,H01T.JOBCD      
+      ,H01T.JOBNM      
+      ,H01T.SINGLEYN   
+      ,H01T.INCUMBCD   
+      ,H01T.INCUMBNM   
+      ,H01T.JOINDT     
+      ,H01T.RETAPPNTDT 
+      ,H01T.LOAAPPNTDT 
+      ,H01T.INPUTEMPID 
+      ,H01T.INPUTDATE  
+      ,H01T.RRTEMPID   
+      ,H01T.RRTDATE    
+      ,H01T.MAPRODUCT  
+      ,H01T.MAPRODUCTNM
+      ,H01T.MAPJOBGRPCD
+      ,H01T.MAPJOBGRPNM
+  FROM HHRMEDUMASTER01_T H01T
+ WHERE COMPCD = 'C40'
+   AND INCUMBCD LIKE 'A%'  -- 현재 재직자 
+   AND ENDGBN = #{ENDGBN}
+   AND UPPER( REPLACE(NAME,' ',''))   LIKE #{NAME}||'%'
+   AND UPPER( REPLACE(DEPTNM,' ','')) LIKE #{DEPTNM}||'%'	
+	ORDER BY NAME ) AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+	) BB
+ WHERE BB.RN  &gt;  #{BEGINROWNUM}	
+	
+</select>
+
+<!-- 
+	사원정보 조회
+ -->
+<select id="selectEmpInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT H01T.COMPCD     
+      ,H01T.ABROADGBN  
+      ,H01T.ABROADGBNM 
+      ,H01T.CTR        
+      ,H01T.CTRNM      
+      ,H01T.ENDGBN     
+      ,H01T.ENDGBNNM   
+      ,H01T.LOCATECD   
+      ,H01T.LOCATENM   
+      ,H01T.CORPGBN    
+      ,H01T.EMPID      
+      ,H01T.NAME       
+      ,H01T.DEPTCD     
+      ,H01T.DEPTNM     
+      ,H01T.DEPTPOSNO  
+      ,H01T.MADEPTCD   
+      ,H01T.MADEPTNM   
+      ,H01T.JOBGRDCD   
+      ,H01T.JOBGRDNM   
+      ,H01T.MAJOBGRDCD 
+      ,H01T.MAJOBGRDNM 
+      ,H01T.FRCD       
+      ,H01T.FRNM       
+      ,H01T.PRODUCT    
+      ,H01T.PRODUCTNM  
+      ,H01T.PJOBGRPCD  
+      ,H01T.PJOBGRPNM  
+      ,H01T.OCCTGCD    
+      ,H01T.OCCTGNM    
+      ,H01T.JOBCD      
+      ,H01T.JOBNM      
+      ,H01T.SINGLEYN   
+      ,H01T.INCUMBCD   
+      ,H01T.INCUMBNM   
+      ,H01T.JOINDT     
+      ,H01T.RETAPPNTDT 
+      ,H01T.LOAAPPNTDT 
+      ,H01T.INPUTEMPID 
+      ,H01T.INPUTDATE  
+      ,H01T.RRTEMPID   
+      ,H01T.RRTDATE    
+      ,H01T.MAPRODUCT  
+      ,H01T.MAPRODUCTNM
+      ,H01T.MAPJOBGRPCD
+      ,H01T.MAPJOBGRPNM
+  FROM HHRMEDUMASTER01_T H01T
+ WHERE H01T.EMPID    = #{EMPID}
+   AND H01T.CTR      = #{COUNTRY}
+	
+</select>
+
+<!-- 
+	주관처목록(수) 조회
+ -->
+<select id="selectInstituteListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) CNT
+  FROM HR_INSTITUTE HI
+ WHERE HI.COMPANY_CD       = #{COMPANY_CD}  
+   AND HI.UPPER(REPLACE(HI.INSTITUTE_NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{INSTITUTE_NAME},' ',''))||'%'
+   AND HI.USE_YN = 'Y'
+</select>
+<!-- 
+	주관처목록조회
+ -->
+<select id="selectInstituteList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.* 
+  FROM (SELECT ROWNUM RN, *
+          FROM (SELECT HI.COMPANY_CD      
+                      ,HI.INSTITUTE_CODE  
+                      ,HI.INSTITUTE_NAME  
+                      ,HI.BIZ_NO          
+                      ,HI.INSTITUTE_URL   
+                      ,HI.WORK_NAME       
+                      ,HI.INSTITUTE_TEL_NO
+                      ,HI.FAX_NO          
+                      ,HI.ZIP_NO          
+                      ,HI.ADDRESS         
+                      ,HI.ADDRESS_SUB     
+                      ,HI.USE_YN          
+                      ,HI.NOTE          
+                  FROM HR_INSTITUTE HI
+                 WHERE HI.COMPANY_CD       = #{COMPANY_CD}  
+                   AND HI.UPPER(REPLACE(HI.INSTITUTE_NAME,' ','')) LIKE '%'||UPPER(REPLACE(#{INSTITUTE_NAME},' ',''))||'%'
+                   AND HI.USE_YN = 'Y'
+                ) AA WHERE ROWNUM  &lt;  #{ENDROWNUM}
+        ) BB WHERE BB.RN  &gt;  #{BEGINROWNUM}
+</select>
+
+</mapper>

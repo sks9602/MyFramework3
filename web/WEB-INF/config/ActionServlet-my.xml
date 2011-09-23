@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans default-lazy-init="true" >
+	<import resource="./applicationContext.xml"/>
+	<import resource="./applicationContextDelegate-my.xml"/>
+
+    <!-- View Resolver for JSPs -->
+    <bean id="viewJspResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+		<!--  property name="prefix" value="/hrdb/"/>
+		<property name="suffix" value=".jsp"/-->
+    </bean>
+
+	<!--  context reload -->
+	<bean name="/system/reload.do" class="project.jun.was.spring.HoRefreshingController">
+	</bean>	
+	
+	<bean name="HoController" class="project.jun.was.spring.HoController" abstract="true">
+		<property name="hoConfig">
+			<ref bean="config"/>
+		</property>
+	</bean>
+	
+
+	<!--  화면 layout -->
+	<bean name="/system/layout.do" class="com.base.system.action.LayoutAction" parent="HoController"  singleton="false" >
+		<property name="hoDelegate" ref="LayoutDelegate"/>
+		<property name="defaultPageInfo" value="/jsp/common/outline/Outline.#p_action_flag.jsp"/>
+	</bean>
+
+	<!-- bean name="/system/sample.do" class="com.base.system.action.SampleAction"  singleton="false"  -->
+	<bean name="/itinAdminWebApp/system/dataBase.do" class="com.base.system.action.SampleAction"  parent="HoController" singleton="false" >
+		<property name="hoDelegate" ref="SampleDelegate"/>
+		<property name="defaultPageInfo" value="/jsp/common/sample/Sample.#p_action_flag#.jsp"/>
+	</bean>
+
+	
+</beans>

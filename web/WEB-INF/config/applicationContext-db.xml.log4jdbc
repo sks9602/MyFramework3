@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+"http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+
+	<!-- 시작.. 프로젝트에서 사용하는 메인 DB 정보 -->
+	
+	<!-- bean id="jndiTemplate" class="org.springframework.jndi.JndiTemplate">
+		<property name="environment">
+			<props>
+				<prop key="java.naming.factory.initial">
+					weblogic.jndi.WLInitialContextFactory
+				</prop>
+				<prop key="java.naming.provider.url">
+					t3://localhost:7001
+				</prop>
+			</props>
+		</property>
+	</bean -->
+
+    <!-- bean id="projectDataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiName" value="projectDS2" /><DATA SOURCE 명 -->
+        <!-- property name="jndiTemplate" value="jndiTemplate" / -->
+    <!-- /bean-->
+
+	<bean id="projectDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="net.sf.log4jdbc.DriverSpy"/>
+		<property name="url" value="jdbc:log4jdbc:oracle:thin:@70.12.200.102:1521:DBGLB"/>
+		<property name="username" value="glms2"/>
+		<property name="password" value="globalpjt!"/>
+	</bean>
+	
+	<bean id="projectSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean"> 
+		<property name="configLocation" value="/WEB-INF/classes/com/base/sql/SqlMapConfig.xml" /> 
+		<!-- property name="mappingLocations" value="/WEB-INF/classes/\*\*\/sql/\*.xml" / --> 
+		<property name="dataSource" ref="projectDataSource" />
+		<!--  TODO for sql reload -->
+		<!-- property name="checkInterval" value="500" / --> 	
+	</bean>
+
+	<!-- Execute Type REUSE (default) -->
+	<bean id="projectSqlSessionReuseTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="projectSqlSessionFactory" />
+		<constructor-arg index="1" value="REUSE" />
+	</bean>
+	<!-- Execute Type BATCH (default) -->
+	<bean id="projectSqlSessionBatchTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="projectSqlSessionFactory" />
+		<constructor-arg index="1" value="BATCH" />
+	</bean>
+		
+	<!-- 끝.. 프로젝트에서 사용하는 메인 DB 정보 -->
+
+
+	<!-- 시작..  SCHEME 정보를 얻기위한 DB 정보 -->
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"> 
+		<property name="location" value="classpath:database.properties"/> 
+	</bean>
+
+    <bean id="dbDataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="${database.class}"/>
+		<property name="url" value="${database.url}"/> 
+        <property name="username" value="${database.username}"/> 
+        <property name="password" value="${database.password}"/> 
+    </bean>
+
+	<bean id="dbSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean"> 
+		<property name="configLocation" value="/WEB-INF/classes/com/base/sql/SqlMapConfig_JDBC.xml" /> 
+		<property name="dataSource" ref="dbDataSource" />
+		<!-- property name="checkInterval" value="500" / --> 
+	</bean>
+
+	<!-- Execute Type REUSE (default) -->
+	<bean id="dbSqlSessionReuseTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="dbSqlSessionFactory" />
+		<constructor-arg index="1" value="REUSE" />
+	</bean>
+	<!-- Execute Type BATCH (default) -->
+	<bean id="dbSqlSessionBatchTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="dbSqlSessionFactory" />
+		<constructor-arg index="1" value="BATCH" />
+	</bean>
+
+	<!-- 끝.. SCHEME 정보를 얻기위한 DB 정보 -->
+	
+</beans>

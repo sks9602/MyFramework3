@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:24 KST 2011-->
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD SQL Map Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration><settings>
+		<setting name="cacheEnabled" value="true"/>
+			<setting name="defaultExecutorType" value="REUSE"/>
+			<setting name="lazyLoadingEnabled" value="true"/>
+			<setting name="defaultStatementTimeout" value="200"/>
+			</settings>
+	<typeAliases>
+		<typeAlias alias="queryParameterMap" type="project.jun.dao.parameter.HoQueryParameterMap"/>
+		<typeAlias alias="queryResultListMap" type="java.util.LinkedHashMap"/>
+		<typeAlias alias="queryResultMap" type="java.util.HashMap"/>
+	</typeAliases>
+	
+	<mappers>
+		<mapper resource="/com/base/system/sql/DataBase.xml"/>
+			</mappers>
+	</configuration>

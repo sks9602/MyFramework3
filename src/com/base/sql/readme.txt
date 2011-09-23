@@ -1,0 +1,1 @@
+<!--결과 컬럼 쿼리할때마다 변경 --><select id="selectDataBaseUser" parameterClass="queryParameterMap" resultClass="queryResultListMap" remapResults="true"></select>

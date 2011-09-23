@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:25 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CommonCombo">
+
+<select id="selectSearchCodeListCombo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT C.COMPANY_CD,C.CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,-1 ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM HO_V_SELECT C
+ WHERE C.COMPANY_CD = #{SSN_COMPANY_CD}
+   AND C.CODE       = #{GROUP_CODE}
+	
+		<if test="CODE_GBN != ''">
+UNION ALL
+SELECT C.COMPANY_CD,'' CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,0 ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM HO_V_SELECT C
+ WHERE COMPANY_CD = #{SSN_COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+		</if>
+		
+UNION ALL
+SELECT C.COMPANY_CD,C.CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,C.ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM HO_V_SELECT C
+ WHERE C.COMPANY_CD = #{SSN_COMPANY_CD}
+   AND C.UPCD   = #{GROUP_CODE}
+   AND C.USE_YN = 'Y'
+	
+		<if test="SORT_COLUMN != ''"> ORDER BY  ${SORT_COLUMN} ${SORT_DIR}</if>
+		<if test="SORT_COLUMN == ''"> ORDER BY  ORDER_NO </if>
+	
+
+</select>
+
+<select id="selectSearchInput" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT TEXT, TYPE, 's_'||NAME NAME, TITLE_CODE, ALLOW_CHARS
+  FROM HO_V_INPUT_SEARCH
+ WHERE LOWER(NAME) = LOWER(#{NAME})
+</select>
+
+<select id="selectUseGroupCombo" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+		</if>
+		
+SELECT USE_GROUP  CODE      /* 사용자그룹   */
+      ,USERGRP_NM CODE_NAME     /* 사용자그룹명 */
+FROM USERGRP
+WHERE COMPANY_CD = #{COMPANY_CD}
+
+</select>
+
+<select id="selectClassifyCode1" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT * FROM (
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE
+      ,C.CODE_NM CODE_NAME
+      ,C.UPCD
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+		</if>
+		
+SELECT C.CLASSIFY_CD     CODE
+      ,C.CLASSIFY_NM     CODE_NAME
+      ,C.P_CLASSIFY_CODE UPCD
+  FROM HR_COURSE_CLASSIFY C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND USE_YN     = 'Y'
+   AND LVL        = 1
+)
+-- ORDER BY CODE_NAME
+</select>
+
+<!-- 과정 소분류를 조회한다 -->
+<select id="selectClassifyCode2" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT * FROM (
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE
+      ,C.CODE_NM CODE_NAME
+      ,C.UPCD
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+		</if>
+		
+		<if test="CLASSIFY_CODE1 != ''">
+UNION ALL
+SELECT C.CLASSIFY_CD     CODE
+      ,C.CLASSIFY_NM     CODE_NAME
+      ,C.P_CLASSIFY_CODE UPCD
+  FROM HR_COURSE_CLASSIFY C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CLASSIFY_CD LIKE #{CLASSIFY_CODE1}||'%'
+   AND USE_YN     = 'Y'
+   AND LVL        = 2
+   		</if>
+)
+-- ORDER BY CODE_NAME
+</select>
+
+<!-- 과정 소분류(상세) 를 조회한다 -->
+<select id="selectClassifyCode3" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT * FROM (
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE
+      ,C.CODE_NM CODE_NAME
+      ,C.UPCD
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+		</if>
+		
+		<if test="CLASSIFY_CODE2 != ''">
+UNION ALL
+SELECT C.CLASSIFY_CD     CODE
+      ,C.CLASSIFY_NM     CODE_NAME
+      ,C.P_CLASSIFY_CODE UPCD
+  FROM HR_COURSE_CLASSIFY C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CLASSIFY_CD LIKE #{CLASSIFY_CODE2}||'%'
+   AND USE_YN     = 'Y'
+   AND LVL        = 3
+		</if>
+)
+-- ORDER BY CODE_NAME
+</select>
+
+<!-- 업종구분에 따른 산업코드를 조회. -->
+<select id="selectWorkGbnCd2" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT * FROM (
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE
+      ,C.CODE_NM CODE_NAME
+      ,C.UPCD
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+		</if>
+		
+		<if test="USEDEF1 != ''">
+UNION ALL
+SELECT CD.CODE         CODE
+      ,CD.CODE_NM      CODE_NAME
+      ,CD.UPCD         UPCD
+  FROM CODET CD
+ WHERE COMPANY_CD   = #{COMPANY_CD}
+   AND USEDEF1      = #{USEDEF1}
+		</if>
+)
+ ORDER BY CODE_NAME
+</select>
+
+<select id="selectCodeInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT C.CODE
+      ,C.CODE_NM CODE_NAME
+      ,C.UPCD
+      ,C.ORDER_NO
+      ,C.USE_YN
+      ,C.USEDEF1
+      ,C.USEDEF2
+      ,C.USEDEF3
+      ,C.USEDEF4
+      ,C.USEDEF5
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE}
+</select>
+
+<!--  교육년도 -->
+<select id="selectEduYear" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+		</if>
+		<if test="NEW_YEAR != ''">
+SELECT TO_CHAR(SYSDATE, 'YYYY') + 1 CODE
+      ,TO_CHAR(SYSDATE, 'YYYY') + 1 CODE_NAME
+  FROM S_DUAL 
+UNION ALL
+		</if>
+		
+SELECT TO_CHAR(2008+ROWNUM) CODE ,TO_CHAR(2008+ROWNUM) CODE_NAME
+  FROM CODET
+ WHERE 2008 + ROWNUM &lt;= TO_NUMBER(TO_CHAR(SYSDATE, 'YYYY'))
+ORDER BY 1 DESC
+</select>
+
+<!--  월조회. -->
+<select id="selectMonth" parameterType="queryParameterMap" resultType="queryResultListMap">
+	<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+	</if>
+SELECT LPAD(RN,2,'0') CODE, TO_CHAR(RN) CODE_NAME
+  FROM (SELECT ROWNUM RN
+          FROM CODET
+         WHERE ROWNUM  &lt;  13 )
+</select>
+
+
+<!--  회사조회. -->
+<select id="selectCompany" parameterType="queryParameterMap" resultType="queryResultListMap">
+	<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+	</if>
+SELECT COMPANY_CD CODE, COMPANY_NM CODE_NAME
+  FROM HR_CLIENT 
+</select>
+
+<!-- 주간조회. -->
+<select id="selectWeek" parameterType="queryParameterMap" resultType="queryResultListMap">
+ SELECT WEEK AS CODE, 
+        WEEK || ' ['|| (CASE WHEN LENGTH(START_YMD) = 8 THEN SUBSTR(START_YMD,5,2)||'-'||SUBSTR(START_YMD,7,2) ELSE '' END)||'('|| SUBSTR(TO_CHAR(TO_DATE(START_YMD,'YYYYMMDD'),'DAY'),0,1) ||') ~ '||
+        (CASE WHEN LENGTH(END_YMD) = 8 THEN SUBSTR(END_YMD,5,2)||'-'||SUBSTR(END_YMD,7,2) ELSE '' END)||'('|| SUBSTR(TO_CHAR(TO_DATE(END_YMD,'YYYYMMDD'),'DAY'),0,1) ||')]' AS CODE_NAME
+   FROM HR_WEEK HW
+  WHERE 1=1
+    AND HW.PLAN_YEAR  = NVL(#{PLAN_YEAR}, TO_CHAR(SYSDATE, 'YYYY'))
+    AND HW.PLAN_MONTH = NVL(#{PLAN_MONTH}, TO_CHAR(SYSDATE, 'MM'))
+</select>
+
+<!--  사업장. -->
+<select id="selectSite" parameterType="queryParameterMap" resultType="queryResultListMap">
+	<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+	</if>
+SELECT COMPANY_CD CODE, COMPANY_NM CODE_NAME
+  FROM HR_CLIENT 
+</select>
+
+<!--  사용자의 소속 사용자 그룹을 조회. -->
+<select id="selectUserUseGroup" parameterType="queryParameterMap" resultType="queryResultListMap">
+	<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+	</if>
+SELECT UU.USE_GROUP CODE, U.USERGRP_NM  CODE_NAME
+  FROM S_USER_USERGRP UU, S_USERGRP U
+ WHERE UU.COMPANY_CD = #{COMPANY_CD}
+   AND UU.COMPANY_CD = U.COMPANY_CD
+   AND UU.USE_GROUP  = U.USE_GROUP
+   AND UU.MEMBER_NO  = #{USER_EMPID}
+</select>
+
+<!--  메일ID. -->
+<select id="selectMail" parameterType="queryParameterMap" resultType="queryResultListMap">
+	<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+	</if>
+SELECT MAIL_ID CODE, TEMPLETE_MEMO CODE_NAME
+  FROM HR_MAIL_TEMPLETE 
+</select>
+
+<!--  사용자그룹. -->
+<select id="selectUseGroup" parameterType="queryParameterMap" resultType="queryResultListMap">
+	<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+	</if>
+SELECT USE_GROUP CODE, USERGRP_NM CODE_NAME
+  FROM S_USERGRP
+ WHERE COMPANY_CD = #{COMPANY_CD}
+ 
+</select>
+
+
+<!--  DataBase사용자 -->
+<select id="selectDataBaseUser" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+		<if test="CODE_GBN != ''">
+SELECT '' CODE ,C.CODE_NM CODE_NAME
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+		</if>
+		
+SELECT USERNAME CODE,  USERNAME NAME
+  FROM DBA_USERS
+ WHERE USERNAME NOT IN ('XDB','SYSTEM','SYS','OUTLN', 'DBSNMP')
+</select>
+
+</mapper>

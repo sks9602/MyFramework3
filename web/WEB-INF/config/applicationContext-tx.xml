@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN"
+"http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<import resource="./applicationContext-aop.xml"/>
+
+    <!--  transaction 관리자  -->
+	<bean id="jtaTransactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
+	</bean>
+		
+	<bean id="transactionProxyTemplate" abstract="true" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager">
+			<ref bean="jtaTransactionManager"/>
+		</property>
+		<property name="transactionAttributes">
+			<props>
+				<prop key="set*">PROPAGATION_REQUIRED, -Exception</prop>				
+				<prop key="batch*">PROPAGATION_REQUIRED, -Exception</prop>				
+				<prop key="insert*">PROPAGATION_REQUIRED, -Exception</prop>				
+				<prop key="update*">PROPAGATION_REQUIRED, -Exception</prop>				
+				<prop key="delete*">PROPAGATION_REQUIRED, -Exception</prop>
+				<prop key="call*">PROPAGATION_REQUIRED, -Exception</prop>
+				<prop key="force*">PROPAGATION_REQUIRED, +Exception</prop>
+				<prop key="*">PROPAGATION_REQUIRED, readOnly</prop>
+			</props>
+		</property>
+	    <property name="preInterceptors">
+	        <list>
+	            <ref bean="preDelegateLoggingAdvisor"/>
+	        </list>
+	    </property>
+	    <property name="postInterceptors">
+	        <list>
+	            <ref bean="preDelegateLoggingAdvisor"/>
+	        </list>
+	    </property>
+	</bean>
+
+	<!-- bean id="nativeJdbcExtractor"  class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor"  lazy-init="true"/>
+	 
+	<bean id="oracleLobhandler"  class="org.springframework.jdbc.support.lob.OracleLobHandler" lazy-init="true">
+		<property name="nativeJdbcExtractor">
+			<ref local="nativeJdbcExtractor"/>
+		</property>
+	</bean -->
+	
+	<!-- bean id="jdbcTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	   <property name="dataSource" ref="projectDataSource"/>
+	</bean -->
+	
+	
+</beans>

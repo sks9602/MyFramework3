@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:19 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BackB2c">
+
+
+<select id="getUserCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+		   SELECT COUNT(*) CNT
+			FROM HR_USER HC , S_USER_USERGRP SUU
+             WHERE 1=1
+             AND HC.COMPANY_CD = SUU.COMPANY_CD(+)
+             AND HC.MEMBER_NO = SUU.MEMBER_NO(+)
+            
+            <if test="S_COMPANY_CD_ES != ''">
+				AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HC.COMPANY_CD IN (">
+					#{S_COMPANY_CD_item}
+				</foreach>
+ 			</if>
+ 			
+ 			
+ 			<if test="S_USE_GROUP_ES != ''">
+				AND <foreach collection="S_USE_GROUP_ES" item="item" separator="," close=")" open=" SUU.USE_GROUP IN (">
+					#{S_USE_GROUP_item}
+				</foreach>
+ 			</if>
+            
+            
+            <if test="S_NAME != ''">
+            	AND UPPER(NAME LIKE) '%'||UPPER(#{S_NAME})||'%'
+            </if>
+            <if test="S_MEMBER_NO_ES != ''">
+				AND <foreach collection="S_MEMBER_NO_ES" item="item" separator="," close=")" open=" HC.MEMBER_NO IN (">
+					#{S_MEMBER_NO_item}
+				</foreach>
+ 			</if>
+ 			<if test="S_MEMBER_NAME_ES != ''">
+				AND <foreach collection="S_MEMBER_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+					REPLACE(UPPER(NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_MEMBER_NAME_item}),' ','')||'%'
+				</foreach>
+			</if>	
+            <if test="S_USE_YN != ''">
+				AND USE_YN = #{S_USE_YN}
+ 			</if>
+            		 
+</select>
+
+<select id="getUserCntBACK" parameterType="queryParameterMap" resultType="queryResultListMap">
+		   SELECT COUNT(*) CNT
+			 FROM HR_USER HC
+		    WHERE 1=1
+            
+            <if test="S_COMPANY_CD_ES != ''">
+				AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HC.COMPANY_CD IN (">
+					#{S_COMPANY_CD_item}
+				</foreach>
+ 			</if>
+            <if test="S_NAME != ''">
+            	AND UPPER(NAME LIKE) '%'||UPPER(#{S_NAME})||'%'
+            </if>
+            <if test="S_MEMBER_NO_ES != ''">
+				AND <foreach collection="S_MEMBER_NO_ES" item="item" separator="," close=")" open=" HC.MEMBER_NO IN (">
+					#{S_MEMBER_NO_item}
+				</foreach>
+ 			</if>
+ 			<if test="S_MEMBER_NAME_ES != ''">
+				AND <foreach collection="S_MEMBER_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+					REPLACE(UPPER(NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_MEMBER_NAME_item}),' ','')||'%'
+				</foreach>
+			</if>	
+            <if test="S_USE_YN != ''">
+				AND USE_YN = #{S_USE_YN}
+ 			</if>
+            		 
+</select>
+
+
+   
+<select id="getUserList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.*
+   FROM (SELECT ROWNUM RN, AA.*,(SELECT USERGRP_NM CODE_NAME 
+							      FROM S_USERGRP
+							      WHERE USE_GROUP = aa.USE_GROUP
+							      AND COMPANY_CD = aa.COMPANY_CD					 		      						  
+	      						  ) USE_GROUP_NM
+               FROM (
+                           SELECT HC.COMPANY_CD, HC.MEMBER_NO, HC.COMPANY_NM, HC.NAME, HC.USE_YN,
+                                   F_CODE_NAME(HC.COMPANY_CD, HC.USER_GBN) AS USER_GBN_NM, HC.USER_GBN
+                                   ,SUU.USE_GROUP
+                         FROM HR_USER HC, S_USER_USERGRP SUU
+                         WHERE 1=1
+                         AND HC.COMPANY_CD = SUU.COMPANY_CD(+)
+                         AND HC.MEMBER_NO = SUU.MEMBER_NO(+)
+                        
+                        <if test="S_COMPANY_CD_ES != ''">
+                            AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HC.COMPANY_CD IN (">
+                                #{S_COMPANY_CD_item}
+                            </foreach>
+                         </if>
+                        <if test="S_NAME != ''">
+                            AND UPPER(NAME LIKE) '%'||UPPER(#{S_NAME})||'%'
+            			</if>
+            			
+            			<if test="S_USE_GROUP_ES != ''">
+							AND <foreach collection="S_USE_GROUP_ES" item="item" separator="," close=")" open=" SUU.USE_GROUP IN (">
+								#{S_USE_GROUP_item}
+							</foreach>
+			 			</if>        			
+            			<if test="S_MEMBER_NO_ES != ''">
+							AND <foreach collection="S_MEMBER_NO_ES" item="item" separator="," close=")" open=" HC.MEMBER_NO IN (">
+								#{S_MEMBER_NO_item}
+							</foreach>
+ 						</if>
+ 						<if test="S_MEMBER_NAME_ES != ''">
+							AND <foreach collection="S_MEMBER_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+								REPLACE(UPPER(NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_MEMBER_NAME_item}),' ','')||'%'
+							</foreach>
+						</if>	
+ 						<if test="S_USE_YN != ''">
+							AND USE_YN = #{S_USE_YN}
+ 						</if>
+ 						<if test="SORT != ''">
+ 							ORDER BY ${SORT} ${DIR} ,MEMBER_NO
+ 						</if>
+ 						<if test="SORT == ''">
+ 							ORDER BY MEMBER_NO
+ 						</if>
+            			
+			 ) AA
+              WHERE ROWNUM  &lt;  #{ENDROWNUM}
+  ) BB            
+  WHERE RN  &gt;  #{BEGINROWNUM}
+</select>
+
+
+<select id="getUserListBACK" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT BB.*
+   FROM (SELECT ROWNUM RN, AA.*
+               FROM (
+               			SELECT COMPANY_CD,
+               			       MEMBER_NO,
+               			       COMPANY_NM,
+               			       NAME,
+               			       USE_YN,
+               			       F_CODE_NAME(COMPANY_CD,USER_GBN) AS USER_GBN_NM,
+               			       USER_GBN
+			 			  FROM HR_USER HC
+		    			 WHERE 1=1
+            			
+            			<if test="S_COMPANY_CD_ES != ''">
+							AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" HC.COMPANY_CD IN (">
+								#{S_COMPANY_CD_item}
+							</foreach>
+ 						</if>
+            			<if test="S_NAME != ''">
+            				AND UPPER(NAME LIKE) '%'||UPPER(#{S_NAME})||'%'
+            			</if>
+            			<if test="S_MEMBER_NO_ES != ''">
+							AND <foreach collection="S_MEMBER_NO_ES" item="item" separator="," close=")" open=" HC.MEMBER_NO IN (">
+								#{S_MEMBER_NO_item}
+							</foreach>
+ 						</if>
+ 						<if test="S_MEMBER_NAME_ES != ''">
+							AND <foreach collection="S_MEMBER_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+								REPLACE(UPPER(NAME),' ','') LIKE '%'|| REPLACE(UPPER(#{S_MEMBER_NAME_item}),' ','')||'%'
+							</foreach>
+						</if>	
+ 						<if test="S_USE_YN != ''">
+							AND USE_YN = #{S_USE_YN}
+ 						</if>
+ 						<if test="SORT != ''">
+ 							ORDER BY ${SORT} ${DIR} ,MEMBER_NO
+ 						</if>
+ 						<if test="SORT == ''">
+ 							ORDER BY MEMBER_NO
+ 						</if>
+            			
+			 ) AA
+              WHERE ROWNUM  &lt;  #{ENDROWNUM}
+  ) BB            
+  WHERE RN  &gt;  #{BEGINROWNUM}
+</select>
+
+<!--//
+상세정보
+//-->
+<select id="getUserView" parameterType="queryParameterMap" resultType="queryResultListMap">
+  SELECT
+         COMPANY_CD 			/* 회사코드    */
+        ,MEMBER_NO 				/* 회원번호    */
+        ,NAME                   /* 이름        */
+        ,USER_GBN   			/* 사용자구분  */
+        ,USE_YN     			/* 사용여부    */
+FROM HR_USER
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MEMBER_NO  = #{MEMBER_NO}
+</select>
+
+<!--//
+유저 권한 리스트
+//-->
+<select id="getUserGrp" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT DECODE(A.USE_GROUP,NULL,'N','Y') AS YN 
+      ,B.USE_GROUP
+      ,B.USERGRP_NM
+FROM( SELECT B.*
+      FROM HR_USER A,S_USER_USERGRP B
+      WHERE A.COMPANY_CD = B.COMPANY_CD
+        AND A.MEMBER_NO = B.MEMBER_NO
+        <if test="MEMBER_NO != ''">
+        AND B.MEMBER_NO = #{MEMBER_NO}
+        </if>
+     ) A, S_USERGRP B 
+WHERE A.COMPANY_CD(+) = B.COMPANY_CD
+  AND A.USE_GROUP(+) = B.USE_GROUP
+  AND B.COMPANY_CD = #{COMPANY_CD}
+GROUP BY A.USE_GROUP, B.USE_GROUP, B.USERGRP_NM
+</select>
+
+<!--//
+유저 중복여부 
+//-->
+<select id="getUserDu" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT
+FROM HR_USER
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MEMBER_NO  = #{MEMBER_NO}
+</select>
+
+<!--//
+강사 중복여부
+//-->
+<select id="getLecDu" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COUNT(*) AS CNT
+FROM HR_LECTURER
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MEMBER_NO  = #{MEMBER_NO}
+</select>
+
+<!--//
+유저 등록
+//-->
+<update id="insertUser" parameterType="queryParameterMap">
+INSERT INTO HR_USER (
+                      COMPANY_CD /* 회사코드    */
+                     ,MEMBER_NO  /* 회원번호    */
+                     ,NAME       /* 이름        */
+                     ,PWD        /* 비밀번호    */
+                     ,USER_GBN   /* 사용자구분  */
+                     ,USE_YN     /* 사용여부    */
+                     ,TEL_NO1     /* 전화번호    */
+                     ,TEL_NO2     /* 전화번호    */
+                     ,TEL_NO3     /* 전화번호    */
+                     ,HANDPHONE1      /* 휴대폰번호  */
+                     ,HANDPHONE2      /* 휴대폰번호  */
+                     ,HANDPHONE3      /* 휴대폰번호  */
+                     ,EMAIL      /* 이메일 */
+                     ,REGI_DT    /* 등록일 */
+                     <if test="USER_EMPID != ''">
+                     ,REGI_NO 
+                     </if>   /* 등록자      */
+                     )
+
+              SELECT  COMPANY_CD 
+                     ,MEMBER_NO
+                     ,NAME
+                     ,PWD
+                     ,'B2901'
+                     ,USE_YN
+                     ,TEL_NO1
+                     ,TEL_NO2
+                     ,TEL_NO3
+                     ,HANDPHONE1
+                     ,HANDPHONE2
+                     ,HANDPHONE3
+                     ,EMAIL
+                     ,SYSDATE
+                     <if test="USER_EMPID != ''">
+                     ,#{USER_EMPID}
+                     </if>   /* 등록자      */
+                FROM V_HR_MEMBER
+               WHERE COMPANY_CD = #{COMPANY_CD}
+                 AND MEMBER_NO  = #{MEMBER_NO}
+</update>
+
+<!--//
+사용자권한 수정처리 
+//-->
+<update id="updateUserInfo" parameterType="queryParameterMap">
+UPDATE HR_USER
+       SET
+             NAME       = #{NAME}  /* 이름        */
+            ,PWD        = #{PWD}  /* 비밀번호    */
+            ,USER_GBN   = #{USER_GBN}  /* 사용자구분  */
+            ,USE_YN     = #{USE_YN}  /* 사용여부    */
+            ,COMPANY_NM = #{COMPANY_NM}  /* 회사명      */
+            ,TEL_NO1     = #{TEL_NO1}  /* 전화번호    */
+            ,TEL_NO2     = #{TEL_NO2}  /* 전화번호    */
+            ,TEL_NO3     = #{TEL_NO3}  /* 전화번호    */
+            ,HANDPHONE1  = #{HANDPHONE1}  /* 휴대폰번호  */
+            ,HANDPHONE2  = #{HANDPHONE2}  /* 휴대폰번호  */
+            ,HANDPHONE3  = #{HANDPHONE3}  /* 휴대폰번호  */
+            ,EMAIL		= #{EMAIL} /*이메일*/
+            ,NOTE       = #{NOTE}  /* 비고        */
+            ,MODI_NO    = #{USER_EMPID}  /* 수정자      */
+            ,MODI_DT    = sysdate
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MEMBER_NO  = #{MEMBER_NO}
+</update>
+<!--//
+사용자 권한 삭제
+//-->
+<update id="deleteUserGrp" parameterType="queryParameterMap">
+DELETE FROM S_USER_USERGRP
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND MEMBER_NO  = #{MEMBER_NO} 
+</update>
+<!--//
+사용자 권한 추가
+//-->
+<update id="insertUserGrp" parameterType="queryParameterMap">
+INSERT INTO S_USER_USERGRP (
+                      <if test="COMPANY_CD != ''">COMPANY_CD </if>/* 회사코드    */
+                      <if test="MEMBER_NO != ''">,MEMBER_NO  </if>/* 회원번호    */
+                      <if test="USE_GROUP != ''">,USE_GROUP  </if> /* 사용자 그룹  */
+                      <if test="USER_EMPID != ''">,REGI_NO   </if> /* 등록자      */
+                     )
+               VALUES(
+                      <if test="COMPANY_CD != ''">#{COMPANY_CD} </if>  /* 회사코드    */
+                      <if test="MEMBER_NO != ''">,#{MEMBER_NO} </if>  /* 회원번호    */
+                      <if test="USE_GROUP != ''">,#{USE_GROUP} </if>  /* 사용자 그룹        */
+                      <if test="USER_EMPID != ''">,#{USER_EMPID}</if>  /* 등록자      */
+                     )
+</update>
+
+<!--//
+컨텐츠 메모 수정 처리
+//-->
+<update id="deleteContentNoteCase" parameterType="queryParameterMap">
+DELETE FROM HR_CONTENT_NOTE_CASE
+WHERE COMPANY_CD = #{COMPANY_CD}
+  AND CONTENT_CD = #{CONTENT_CD}
+  AND LECPLAN_SEQ = #{LECPLAN_SEQ}
+  AND CHAPTER_NO = #{CHAPTER_NO}
+  AND CLAUSE_NO = #{CLAUSE_NO}
+  AND NOTE_SEQ = #{NOTE_SEQ}
+</update>
+
+
+<update id="insertHrUser" parameterType="queryParameterMap">
+INSERT INTO HR_USER ( 
+    COMPANY_CD,
+    MEMBER_NO,
+    NAME,
+    PWD,   
+    USER_GBN,
+    DEPT_NAME,
+    JIKWI_NM,
+    TEL_NO1,
+    TEL_NO2,
+    TEL_NO3,
+    HANDPHONE1,
+    HANDPHONE2,
+    HANDPHONE3, 
+    EMAIL,
+    NOTE,
+    USE_YN,
+    IP_ADDR,
+    LOGIN_DT,
+    REGI_NO
+)
+SELECT  
+       COMPANY_CD,     
+	   MEMBER_NO,    
+	   NAME, 		
+	   PWD,
+	   'B2901',
+	   DEPT_NAME,
+	   JIKWI_NM,
+	   TEL_NO1,
+	   TEL_NO2,
+	   TEL_NO3,
+	   HANDPHONE1,
+	   HANDPHONE2,
+	   HANDPHONE3,
+	   EMAIL,
+	   'N',
+	   #{USE_YN_ES},
+	   IP_ADDR,
+	   LOGIN_DT,
+	   #{USER_EMPID}
+    FROM V_HR_MEMBER
+    WHERE COMPANY_CD = #{COMPANY_CD_ES}
+    AND MEMBER_NO = #{MEMBER_NO_ES}
+</update>
+
+<select id="getHrUserCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT count(*) CNT 
+	FROM  HR_USER 
+	WHERE COMPANY_CD = #{COMPANY_CD_ES}
+	AND MEMBER_NO = #{MEMBER_NO_ES}
+</select>
+
+<select id="getVHrMemberCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT count(*) CNT 
+	FROM  V_HR_MEMBER
+	WHERE COMPANY_CD = #{COMPANY_CD_ES}
+	AND MEMBER_NO = #{MEMBER_NO_ES}
+</select>
+
+
+<select id="getSUserUsegrpCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT COUNT(*) CNT
+	FROM S_USER_USERGRP
+	WHERE COMPANY_CD = #{COMPANY_CD_ES}
+	AND MEMBER_NO = #{MEMBER_NO_ES}
+	AND USE_GROUP = #{USE_GROUP_ES}
+</select>
+
+
+<select id="getSUserUsegrpCnt2" parameterType="queryParameterMap" resultType="queryResultListMap">
+	SELECT COUNT(*) CNT
+	FROM S_USER_USERGRP
+	WHERE COMPANY_CD = #{COMPANY_CD_ES}
+	AND MEMBER_NO = #{MEMBER_NO_ES}
+</select>
+
+
+<update id="insertSUserUsegrp" parameterType="queryParameterMap">
+	INSERT INTO S_USER_USERGRP (
+	   COMPANY_CD, 
+	   MEMBER_NO, 
+	   USE_GROUP, 
+	   REGI_NO
+	)VALUES(
+	    #{COMPANY_CD_ES},
+	    #{MEMBER_NO_ES},
+	    #{USE_GROUP_ES},
+	    #{USER_EMPID}
+	)	
+</update>
+
+
+<update id="deleteHrUser" parameterType="queryParameterMap">
+	DELETE HR_USER
+	WHERE COMPANY_CD = #{COMPANY_CD_ES}
+	AND MEMBER_NO = #{MEMBER_NO_ES}	
+</update>
+
+
+<update id="deleteSUserUsergrp" parameterType="queryParameterMap">
+	DELETE S_USER_USERGRP
+	WHERE COMPANY_CD = #{COMPANY_CD_ES}
+	AND MEMBER_NO = #{MEMBER_NO_ES}
+	AND USE_GROUP =  #{USE_GROUP_ES}
+</update>
+
+
+
+
+</mapper>

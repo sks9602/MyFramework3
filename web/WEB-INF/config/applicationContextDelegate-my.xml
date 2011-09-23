@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans default-lazy-init="true" >
+	<import resource="./applicationContext-dao.xml"/>
+
+	<bean id="HoDelegate" class="project.jun.delegate.HoDelegate">
+		<property name="hoDaoMap">
+			<map>
+				<entry key="ProjectDao"><ref bean="proxyProjectDao"/></entry>
+				<entry key="DbDao"><ref bean="proxyDbDao"/></entry>
+			</map>
+		</property>
+	</bean>
+
+
+	<bean id="LayoutDelegateWithoutTx" class="com.base.system.delegate.LayoutDelegate" parent="HoDelegate" singleton="false"></bean>
+	<bean id="LayoutDelegate" parent="transactionProxyTemplate" singleton="false">
+		<property name="target">
+			<ref local="LayoutDelegateWithoutTx"/>
+		</property>
+	</bean>
+	
+	<bean id="SampleDelegateWithoutTx" class="com.base.system.delegate.SampleDelegate" parent="HoDelegate" singleton="false"></bean>
+	<bean id="SampleDelegate" parent="transactionProxyTemplate" singleton="false">
+		<property name="target">
+			<ref local="SampleDelegateWithoutTx"/>
+		</property>
+	</bean>
+	
+</beans>

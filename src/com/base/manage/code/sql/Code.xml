@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:23 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CodeDAO">
+
+<select id="selectCodeListCnt" parameterType="queryParameterMap" resultType="queryResultListMap">
+
+SELECT COUNT(*) CNT
+  FROM CODET
+ WHERE 1=1
+   
+		 <if test="S_UPCODE_YN == &quot;Y&quot;">
+			AND LENGTH(CODE) = 3
+		 </if>
+		 <if test="S_UPCODE_YN == &quot;N&quot;">
+			AND LENGTH(CODE) = 5
+		 </if>
+		 <if test="S_COMPANY_CD_ES != ''">
+			AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" COMPANY_CD IN (">
+				#{S_COMPANY_CD_item}
+			</foreach>
+		 </if>
+		 <if test="S_CODE_CODE_ES != ''">
+			AND <foreach collection="S_CODE_CODE_ES" item="item" separator="OR" close=" )" open=" (">
+				CODE LIKE REPLACE(UPPER(#{S_CODE_CODE_item}),' ','')||'%'
+			</foreach>
+		 </if>
+		 <if test="S_CODE_NAME_ES != ''">
+			AND <foreach collection="S_CODE_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+				REPLACE(UPPER(CODE_NM),' ','') LIKE '%'|| REPLACE(UPPER(#{S_CODE_NAME_item}),' ','')||'%'
+			</foreach>
+		 </if>
+		 <if test="S_USE_YN_ES != ''">
+			AND <foreach collection="S_USE_YN_ES" item="item" separator="," close=")" open=" USE_YN IN (">
+				#{S_USE_YN_item}
+			</foreach>
+		 </if>
+   
+   
+</select>
+
+<select id="selectCodeList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT   LIST.*, DECODE( LENGTH(UPCD), 1, F_CODE_NAME2( LIST.COMPANY_CD, 'W20', 'USEDEF1', LIST.USEDEF5), '-') USEDEF5_NAME
+  FROM (SELECT ROWNUM RNUM, SUB.*
+          FROM (
+				 SELECT COMPANY_CD, CODE,
+	   					CODE_NM, UPCD, ORDER_NO, 
+	   					USE_YN, USEDEF1, USEDEF2, 
+	   					USEDEF3, USEDEF4, USEDEF5, 
+	   					REGI_DT, REGI_NO, MODI_DT, 
+	   					MODI_NO
+  				  FROM CODET
+ 				 WHERE 1=1
+				
+					<if test="S_UPCODE_YN == &quot;Y&quot;">
+						AND LENGTH(CODE) = 3
+					</if>
+					<if test="S_UPCODE_YN == &quot;N&quot;">
+						AND LENGTH(CODE) = 5
+					</if>
+					 <if test="S_COMPANY_CD_ES != ''">
+						AND <foreach collection="S_COMPANY_CD_ES" item="item" separator="," close=")" open=" COMPANY_CD IN (">
+							#{S_COMPANY_CD_item}
+						</foreach>
+					 </if>
+					 <if test="S_CODE_CODE_ES != ''">
+						AND <foreach collection="S_CODE_CODE_ES" item="item" separator="OR" close=" )" open=" (">
+							CODE LIKE REPLACE(UPPER(#{S_CODE_CODE_item}),' ','')||'%'
+						</foreach>
+					 </if>
+					 <if test="S_CODE_NAME_ES != ''">
+						AND <foreach collection="S_CODE_NAME_ES" item="item" separator="OR" close=" )" open=" (">
+							REPLACE(UPPER(CODE_NM),' ','') LIKE '%'|| REPLACE(UPPER(#{S_CODE_NAME_item}),' ','')||'%'
+						</foreach>
+					 </if>
+					 <if test="S_USE_YN_ES != ''">
+						AND <foreach collection="S_USE_YN_ES" item="item" separator="," close=")" open=" USE_YN IN (">
+							#{S_USE_YN_item}
+						</foreach>
+					 </if>
+					 <if test="SORT != ''">
+					 	ORDER BY ${SORT} ${DIR}
+					 </if>
+					 <if test="SORT == ''">
+					 	ORDER BY CODE
+					 </if>
+   				 
+                 ) SUB
+		 WHERE ROWNUM  &lt;  #{ENDROWNUM}
+      	) LIST
+ WHERE RNUM  &gt;  #{BEGINROWNUM}
+   
+</select>
+
+<!--  해당코드의 상세정보를 조회한다. -->
+<select id="selectListDetail" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD, CODE,
+	   CODE_NM, UPCD, ORDER_NO, 
+	   USE_YN, USEDEF1, USEDEF2, 
+	   USEDEF3, USEDEF4, USEDEF5, 
+	   REGI_DT, REGI_NO, MODI_DT, 
+	   MODI_NO,
+	   DECODE( LENGTH(CODE), 5, (SELECT USEDEF5 FROM CODET WHERE COMPANY_CD = CT.COMPANY_CD AND CODE = SUBSTR(CT.CODE, 0, 3)), USEDEF5) CUD_GBN,
+	   F_CODE_NAME2( COMPANY_CD, 'W02', 'USEDEF1', USE_YN) USE_YN_NAME,
+	   DECODE( LENGTH(UPCD), 1, F_CODE_NAME2( COMPANY_CD, 'W20', 'USEDEF1', USEDEF5), '-') USEDEF5_NAME
+  FROM CODET CT
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE}
+</select>
+
+<!--  해당코드의 하위코드를 조회한다. -->
+<select id="selectListDetailByUpcd" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT COMPANY_CD, CODE,
+	   CODE_NM, UPCD, ORDER_NO, 
+	   USE_YN, USE_YN USE_YN_ES, USEDEF1, USEDEF2, 
+	   USEDEF3, USEDEF4, USEDEF5, 
+	   REGI_DT, REGI_NO, MODI_DT, 
+	   MODI_NO
+  FROM CODET
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND UPCD       = #{CODE}
+</select>
+
+<update id="updateCode" parameterType="queryParameterMap">
+UPDATE CODET                     
+SET    CODE_NM    = #{CODE_NM},   
+       UPCD       = #{UPCD},      
+       ORDER_NO   = #{ORDER_NO},  
+       USE_YN     = #{USE_YN},    
+       USEDEF1    = #{USEDEF1},   
+       USEDEF2    = #{USEDEF2},   
+       USEDEF3    = #{USEDEF3},   
+       USEDEF4    = #{USEDEF4},   
+       USEDEF5    = #{USEDEF5},   
+       MODI_DT    = SYSDATE,   
+       MODI_NO    = #{USER_EMPID}    
+WHERE  COMPANY_CD = #{COMPANY_CD}
+AND    CODE       = #{CODE}         
+</update>
+
+<!--  해동코드를 삭제한다. -->
+<update id="deleteCode" parameterType="queryParameterMap">
+DELETE FROM CODET                     
+WHERE  COMPANY_CD = #{COMPANY_CD}
+AND    CODE       = #{CODE}         
+</update>
+
+<!-- 그룹코드일 경우 하위코드 수정. -->
+<update id="updateCodeSub" parameterType="queryParameterMap">
+UPDATE CODET                     
+SET    CODE_NM    = #{CODE_NM_ES},   
+       UPCD       = #{UPCD},      
+       ORDER_NO   = #{ORDER_NO_ES},  
+       USE_YN     = #{USE_YN_ES},    
+       USEDEF1    = #{USEDEF1_ES},   
+       USEDEF2    = #{USEDEF2_ES},   
+       USEDEF3    = #{USEDEF3_ES},   
+       USEDEF4    = #{USEDEF4_ES},   
+       USEDEF5    = #{USEDEF5_ES},   
+       MODI_DT    = SYSDATE,   
+       MODI_NO    = #{USER_EMPID}    
+WHERE  COMPANY_CD = #{COMPANY_CD}
+AND    CODE       = #{CODE_ES}         
+</update>
+
+
+<!-- 그룹코드일 경우 하위코드를 삭제한다.. -->
+<update id="deleteCodeSub" parameterType="queryParameterMap">
+DELETE FROM CODET                     
+WHERE  COMPANY_CD = #{COMPANY_CD}
+AND    CODE       = #{CODE_ES}         
+</update>
+<!-- 그룹코드일 경우 하위코드 등록. -->
+<update id="insertCodeSub" parameterType="queryParameterMap">
+INSERT INTO CODET ( COMPANY_CD , 
+                    CODE       , 
+                    CODE_NM    , 
+                    UPCD       , 
+                    ORDER_NO   , 
+                    USE_YN     , 
+                    USEDEF1    , 
+                    USEDEF2    , 
+                    USEDEF3    , 
+                    USEDEF4    , 
+                    USEDEF5    , 
+                    REGI_DT    , 
+                    REGI_NO    , 
+                    MODI_DT    , 
+                    MODI_NO    )
+            SELECT COMPANY_CD,
+                   SUBSTR(#{CODE},0,1)||LPAD(TO_NUMBER(SUBSTR(MAX(CODE),2)) +1, 4, '0'),
+                   #{CODE_NM_ES}    ,
+                   UPCD            , 
+                   #{ORDER_NO_ES}   , 
+                   #{USE_YN_ES}     , 
+                   #{USEDEF1_ES}    , 
+                   #{USEDEF2_ES}    , 
+                   #{USEDEF3_ES}    , 
+                   #{USEDEF4_ES}    , 
+                   #{USEDEF5_ES}    , 
+                   SYSDATE         , 
+                   #{USER_EMPID}    , 
+                   SYSDATE         , 
+                   #{USER_EMPID} 
+              FROM CODET
+             WHERE COMPANY_CD = #{COMPANY_CD}
+               AND UPCD       = #{CODE}
+             GROUP BY COMPANY_CD, UPCD
+</update>
+
+<select id="selectCodeListCombo" parameterType="queryParameterMap" resultType="queryResultListMap">
+	
+		<if test="CODE_GBN != ''">
+SELECT C.COMPANY_CD,'' CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,0 ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM CODET C
+ WHERE COMPANY_CD = #{COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+UNION ALL
+		</if>
+		
+SELECT C.COMPANY_CD,C.CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,C.ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM CODET C
+ WHERE C.COMPANY_CD = #{COMPANY_CD}
+   AND C.UPCD   = #{GROUP_CODE}
+   AND C.USE_YN = 'Y'
+	
+		<if test="USEDEF1 != ''"> AND C.USEDEF1 = #{USEDEF1} </if>
+		<if test="USEDEF2 != ''"> AND C.USEDEF2 = #{USEDEF2} </if>
+		<if test="USEDEF3 != ''"> AND C.USEDEF3 = #{USEDEF3} </if>
+		<if test="USEDEF4 != ''"> AND C.USEDEF4 = #{USEDEF4} </if>
+		<if test="USEDEF5 != ''"> AND C.USEDEF5 = #{USEDEF5} </if>		
+		<if test="SORT != ''"> ORDER BY  ${SORT} </if>
+		<if test="SORT == ''"> ORDER BY  ORDER_NO </if>
+	
+
+</select>
+
+
+<select id="selectSearchCodeListCombo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT C.COMPANY_CD,C.CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,-1 ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM HO_V_SELECT C
+ WHERE C.COMPANY_CD = #{SSN_COMPANY_CD}
+   AND C.CODE       = #{GROUP_CODE}
+	
+		<if test="CODE_GBN != ''">
+UNION ALL
+SELECT C.COMPANY_CD,'' CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,0 ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM HO_V_SELECT C
+ WHERE COMPANY_CD = #{SSN_COMPANY_CD}
+   AND CODE       = #{CODE_GBN}
+		</if>
+		
+UNION ALL
+SELECT C.COMPANY_CD,C.CODE ,C.CODE_NM CODE_NAME ,C.UPCD ,C.ORDER_NO ,C.USE_YN
+      ,C.USEDEF1 ,C.USEDEF2 ,C.USEDEF3 ,C.USEDEF4 ,C.USEDEF5
+  FROM HO_V_SELECT C
+ WHERE C.COMPANY_CD = #{SSN_COMPANY_CD}
+   AND C.UPCD   = #{GROUP_CODE}
+   AND C.USE_YN = 'Y'
+	
+		<if test="SORT_COLUMN != ''"> ORDER BY  ${SORT_COLUMN} ${SORT_DIR}</if>
+		<if test="SORT_COLUMN == ''"> ORDER BY  ORDER_NO </if>
+	
+
+</select>
+</mapper>

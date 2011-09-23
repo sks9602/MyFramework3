@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+
+
+	<bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>/WEB-INF/classes/message/ActionMessage</value>
+				<value>/WEB-INF/classes/message/CommonMessage</value>
+				<value>/WEB-INF/classes/message/ErrorMessage</value>
+				<value>/WEB-INF/classes/message/PageMessage</value>
+			</list>
+		</property>
+		<property name="cacheSeconds" value="5"/>
+		<property name="defaultEncoding" value="utf-8"/>
+	</bean>
+
+ 	<bean id="excelView" class="project.jun.was.view.HoExcelView">
+		<property name="contentType" value="application/vnd.ms-excel; charset=UTF-8"/>
+	</bean>
+
+	<bean id="config" class="project.jun.was.config.HoConfig">
+		<property name="log4j">
+			<value>$WEB-INF/classes/log4j.properties</value>
+		</property>
+			<!-- value>D:/ProjectSource/SEL-HRD-Back/web/WEB-INF/config/log4j.properties</value -->
+		<property name="dateFormatMapJS">
+			<map>
+				<entry key="yyyy-MM-dd"        value="Y-m-d"/>
+				<entry key="yyyy/MM/dd"        value="Y/m/d"/>
+				<entry key="MM-dd-yyyy"        value="m-d-Y"/>
+				<entry key="MM/dd/yyyy"        value="m/d/Y"/>
+			</map>
+		</property>
+		<property name="dateAltFormatMapJS">
+			<map>
+				<entry key="yyyy-MM-dd"        value="d|md|m-d|m/d|ymd|y-m-d|y/m/d|Ymd|Y-m-d|Y/m/d"/>
+				<entry key="yyyy/MM/dd"        value="d|md|m-d|m/d|ymd|y-m-d|y/m/d|Ymd|Y-m-d|Y/m/d"/>
+				<entry key="MM-dd-yyyy"        value="d|md|m-d|m/d|ymd|m-d-y|m/d/y|mdY|m-d-Y|m/d/Y"/>
+				<entry key="MM/dd/yyyy"        value="d|md|m-d|m/d|ymd|m-d-y|m/d/y|mdY|m-d-Y|m/d/Y"/>
+			</map>
+		</property>
+		<property name="displayFormat">
+			<map>
+				<entry key="YMD"        value="MM/dd/yyyy"/>
+				<entry key="YM"        value="MM/yyyy"/>
+				<entry key="Y"        value="yyyy"/>
+				<entry key="HMS"        value="a hh:mm:ss"/>
+				<entry key="HM"        value="a hh:mm"/>
+				<entry key="POINT"      value="###,###,###,###,###,###,###.00"/>
+				<entry key="CURRENCY"   value="###,###,###,###,###,###,###"/>
+				<entry key="NUMBER"     value="###,###,###,###,###,###,###"/>
+				<entry key="INT"        value="#####################"/>
+			</map>
+		</property>
+		<property name="defaultDao">
+			<value>ProjectDao</value>
+		</property>
+		<property name="sessionNamePrefix">
+			<value>SSN_</value>
+		</property>
+		<property name="characterSet">
+			<value>utf-8</value>
+		</property>
+		<property name="characterSetAjax">
+			<value>utf-8</value>
+		</property>
+		<property name="characterSetFile">
+			<value>euc-kr</value>
+		</property>
+		<property name="characterSetInput">
+			<value>utf-8</value>
+		</property>
+		<property name="dirFileUpload">
+			<value>/webapp/apps/SEM-CPS/fileUpCPS/</value>
+		</property>
+		<property name="dirWasHome">
+			<value>/</value>
+		</property>
+		<property name="dirWebHome">
+			<value>/static/flash</value>
+		</property>
+		<property name="productMode">
+			<value>false</value>
+		</property>
+		<property name="actionFlag">
+			<value>p_action_flag</value>
+		</property>
+		<property name="uploadType">
+			<value>cos</value><!-- cos / common -->
+		</property>
+		<property name="debugParameter">
+			<value>true</value>
+		</property>
+		<property name="configMap">
+			<map>
+				<entry key="FTP_SEVER_IP"    value="70.12.101.219"/>
+				<entry key="SEARCH_MAX_TD_CNT"    value="8"/><!-- 검색조건에 4개의 조건이 들어갈수있도록 set 4*2 -->
+			</map>
+		</property>
+		<property name="outlineMap">
+			<map>
+				<entry key="LAYOUT"   value="/jsp/common/outline/Outline.layout.jsp"/>
+				<entry key="MAIN"     value="/jsp/common/outline/Outline.main.jsp"/>
+				<entry key="BLANK"    value="/jsp/common/outline/Outline.blank.jsp"/>
+				<entry key="IFRAME"   value="/jsp/common/outline/Outline.iframe.jsp"/>
+				<entry key="POPUP"    value="/jsp/common/outline/Outline.popup.jsp"/>
+				<entry key="EXCEL"    value="/jsp/common/outline/Outline.excel.jsp"/>
+				<entry key="AJAX"     value="/jsp/common/outline/Outline.ajax.jsp"/>
+				<entry key="AJAX_POP" value="/jsp/common/outline/Outline.ajax_popup.jsp"/>
+				<entry key="AJAX_WIN" value="/jsp/common/outline/Outline.ajax_window.jsp"/>
+				
+				<entry key="DATA_JSON"        value="/jsp/common/data/Data.r_json.jsp"/>
+				<entry key="DATA_FLEX"        value="/jsp/common/data/Data.r_flex_data.jsp"/>
+				
+				<entry key="MSG_IFRAME"       value="/jsp/common/message/iframe.jsp"/>
+				<entry key="MSG_HTML"         value="/jsp/common/message/html.jsp"/>
+				<entry key="MSG_AJAX"         value="/jsp/common/message/ajax.jsp"/>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="hoFtpClient" class="project.jun.util.HoFtpClient">
+		<property name="serverInfoMap">
+			<map>
+				<entry key="server1" value="ip, port, id, password, UNIX"/>
+			</map>		
+		</property>
+
+	</bean>	
+</beans>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Sep 01 17:09:24 KST 2011-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Page">
+
+<select id="selectPageList" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT ROWNUM RN, AA.* 
+  FROM (
+SELECT	PAGE_ID             /*화면ID     */
+       ,PGM_NM              /*프로그램명 */
+  FROM  S_PAGE_INFO
+ WHERE  COMPANY_CD = #{COMPANY_CD}
+   AND  SYSTEM_CD  = #{SYSTEM_CD}     
+ <if test="SORT != ''">
+ 	ORDER BY ${SORT} ${DIR}, PAGE_ID
+ </if>
+ <if test="SORT == ''">
+ 	ORDER BY PAGE_ID
+ </if> 
+) AA
+</select>
+
+
+<select id="selectPageInfo" parameterType="queryParameterMap" resultType="queryResultListMap">
+SELECT
+       PAGE_ID              /* 화면ID     */
+      ,PGM_NM               /* 프로그램명   */
+      ,PGM_COMMENT          /* 프로그램설명 */
+      ,SYSTEM_CD            /* 시스템코드   */
+      ,PAGE_TYPE            /* 화면종류     */
+      ,PGM_URL              /* 링크URL   */
+FROM  S_PAGE_INFO
+ WHERE  COMPANY_CD = #{COMPANY_CD}
+   AND  PAGE_ID    = #{PAGE_ID}  
+</select>
+
+<update id="updatePageInfo" parameterType="queryParameterMap">
+UPDATE S_PAGE_INFO SET
+       PGM_NM      = #{PGM_NM}        /* 프로그램명    */
+      ,PGM_COMMENT = #{PGM_COMMENT}    /* 프로그램설명 */
+      ,SYSTEM_CD   = #{SYSTEM_CD}      /* 시스템코드    */
+      ,PAGE_TYPE   = #{PAGE_TYPE}      /* 화면종류       */
+      ,PGM_URL     = #{PGM_URL}        /* 링크URL    */
+      ,MODI_DT     = SYSDATE   /* 수정일         */
+      ,MODI_NO     = #{USER_EMPID}   /* 수정자          */
+WHERE COMPANY_CD   = #{COMPANY_CD}    
+  AND PAGE_ID      = #{PAGE_ID}   
+</update>
+
+</mapper>
