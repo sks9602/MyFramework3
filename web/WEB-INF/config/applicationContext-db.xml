@@ -17,12 +17,14 @@
         </constructor-arg>
     </bean>
 	
-	<bean id="projectSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean"> 
+	<!-- bean id="projectSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean" --> 
+	
+	<bean id="projectSqlSessionFactory" class="project.jun.dao.ibatis.RefreshableSqlSessionFactoryBean">
 		<property name="configLocation" value="/WEB-INF/classes/com/base/sql/SqlMapConfig.xml" /> 
 		<!-- property name="mappingLocations" value="/WEB-INF/classes/\*\*\/sql/\*.xml" / --> 
 		<property name="dataSource" ref="projectDataSource" />
 		<!--  TODO for sql reload -->
-		<!-- property name="checkInterval" value="500" / --> 	
+		<property name="checkInterval" value="500" /> 	
 	</bean>
 
 	<!-- Execute Type REUSE (default) -->

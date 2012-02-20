@@ -23,9 +23,9 @@
 	</bean>
 
 	<bean id="config" class="project.jun.was.config.HoConfig">
-		<property name="log4j">
+		<!-- property name="log4j">
 			<value>$WEB-INF/classes/log4j.properties</value>
-		</property>
+		</property -->
 			<!-- value>D:/ProjectSource/SEL-HRD-Back/web/WEB-INF/config/log4j.properties</value -->
 		<property name="dateFormatMapJS">
 			<map>
@@ -105,6 +105,7 @@
 			<map>
 				<entry key="LAYOUT"   value="/jsp/common/outline/Outline.layout.jsp"/>
 				<entry key="MAIN"     value="/jsp/common/outline/Outline.main.jsp"/>
+				<entry key="MAIN_GRID"     value="/jsp/common/outline/Outline.main_grid.jsp"/>
 				<entry key="BLANK"    value="/jsp/common/outline/Outline.blank.jsp"/>
 				<entry key="IFRAME"   value="/jsp/common/outline/Outline.iframe.jsp"/>
 				<entry key="POPUP"    value="/jsp/common/outline/Outline.popup.jsp"/>

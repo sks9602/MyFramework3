@@ -29,7 +29,7 @@
 	</bean>
 
 	<!-- bean name="/system/sample.do" class="com.base.system.action.SampleAction"  singleton="false"  -->
-	<bean name="/itinAdminWebApp/system/dataBase.do" class="com.base.system.action.SampleAction"  parent="HoController" singleton="false" >
+	<bean name="/itinAdminWebApp/system/sample.do" class="com.base.system.action.SampleAction"  parent="HoController" singleton="false" >
 		<property name="hoDelegate" ref="SampleDelegate"/>
 		<property name="defaultPageInfo" value="/jsp/common/sample/Sample.#p_action_flag#.jsp"/>
 	</bean>
