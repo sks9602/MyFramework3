@@ -245,12 +245,8 @@ public class TagLibSearch extends TagLibSuperDB {
 
 			increaseIndex("SEARCH_TD", size);
 
-			addNewLine(buf, "{ layout : 'hbox', ");
-			addNewLine(buf, "	bodyStyle : 'border : none;margin:1px 0px 0px 0px;vertical-align:middle;',");
-			
-			addNewLine(buf, "	align : 'stretch',");
-			
-			// addNewLine(buf, "   items: [ {	xtype: 'compositefield',"); // start compositefield
+			addNewLine(buf, "{ xtype : 'fieldcontainer', ");
+			addNewLine(buf, "	defaults : {labelAlign: 'right', labelWidth: 90 },");
 			addNewLine(buf, "   			items: [");			
 		} 
 
@@ -460,7 +456,7 @@ public class TagLibSearch extends TagLibSuperDB {
 
 	
 	public void printTitle(StringBuffer buf, String title) {
-		
+		/*
 		addNewLine(buf, "{");
 		addNewLine(buf, "xtype : 'label', ");
 		// addNewLine(buf, "html : '<span style=\"width:150;\">"+title+"</span> : ',");
@@ -470,13 +466,15 @@ public class TagLibSearch extends TagLibSuperDB {
 		addNewLine(buf, "labelStyle : 'font-weight:bold;text-align:right;vertical-align:bottom;display:inline-block;'");
 		addNewLine(buf, "},");
 		
-
+		 */
 	}
 
 	public void printFieldLabel(StringBuffer buf, String title) {
 		//addNewLine(buf, "plugins: [ Ext.ux.FieldLabeler ], ");
 		//addNewLine(buf, "fieldLabel : '"+title+"', labelWidth : 100,");
 		//addNewLine(buf, "labelAlign : 'right',");
+		
+		addNewLine(buf, "fieldLabel : '"+title+"',");
 
 	}
 
@@ -524,15 +522,16 @@ public class TagLibSearch extends TagLibSuperDB {
 
 		int startIdx = 1;
 		printTitle(buf, title);
-		addNewLine(buf, " new Ext.form.ComboBox({");
+		addNewLine(buf, " {");
 		printFieldLabel(buf, title);
+		addNewLine(buf, " xtype : 'combobox',");
 		addNewLine(buf, " displayField : '"+getNameColumn()+"',");
 		addNewLine(buf, " valueField : '"+getCodeColumn()+"',");
 		addNewLine(buf, " name: '"+name+"', hiddenName  : '"+name+"',");
 		addNewLine(buf, " typeAhead: true,");
-		addNewLine(buf, " mode: 'local',");
+		addNewLine(buf, " mode: 'local', queryMode: 'local', ");
 		addNewLine(buf, " forceSelection: false, autoSelect : false,");
-		addNewLine(buf, " width: "+width+",");
+		addNewLine(buf, " width: "+getWidth()+",");
 		
 		if( firstGbn.equals("none")) {
 			addNewLine(buf, " emptyText : '',");
@@ -549,14 +548,15 @@ public class TagLibSearch extends TagLibSuperDB {
 		}
 		
 		addNewLine(buf, " value : '"+selectedVal+"' ,");
-		addNewLine(buf, " store: new Ext.data.ArrayStore({ ");
+		addNewLine(buf, " store: Ext.create('Ext.data.Store', { ");
+		addNewLine(buf, " model : Ext.define('"+getGroupCode()+"', { extend : 'Ext.data.Model',  ");
 		addNewLine(buf, " fields: [");
-		addNewLine(buf,  list.getMetaDataString() );
-		addNewLine(buf, " ],");
+		addNewLine(buf,  list.getMetaDataString("name") );
+		addNewLine(buf, " ]}),");
 		addNewLine(buf, " data: ");
-		addNewLine(buf, list.toJavascriptDataArray(startIdx) );
+		addNewLine(buf,  list.toJavascriptArray(startIdx) );
 		addNewLine(buf, " }) ");
-		addNewLine(buf, " })");
+		addNewLine(buf, " }");
 
 		
 	}
@@ -1449,7 +1449,7 @@ public class TagLibSearch extends TagLibSuperDB {
 		printFieldLabel(buf, title);
 		
 		addNewLine(buf, "  triggerClass : 'x-form-search-trigger',");
-		addNewLine(buf, "  listeners : { render : function (c) { c.trigger.set({ qtip : '조회이력 보기'})} }, ");
+		addNewLine(buf, "  listeners : { click : { element: 'el', fn: function(){ alert( this.triggerClass ); } } }, ");
 		if( getNotNull().equals("Y")) {
 			addNewLine(buf, "  allowBlank : false, ");
 		}
@@ -1572,7 +1572,7 @@ public class TagLibSearch extends TagLibSuperDB {
 		addNewLine(buf, "  format    : '"+super.getHoConfig().getDateFormatMapJS(super.getHoParameter().getDefaut("DateFormat"))+"',");
 		addNewLine(buf, "  altFormats    : '"+ super.getHoConfig().getDateAltFormatMapJS(super.getHoParameter().getDefaut("DateFormat"))+"',");		
 		addNewLine(buf, "  id: 'id_" + name + "_start_dt',");	
-		addNewLine(buf, "  endDateField: 'id_" + name + "_end_dt' ,");	
+		addNewLine(buf, "  endField: 'id_" + name + "_end_dt' ,");	
 		addNewLine(buf, "  value     : '" + startValue + "' ");
 		addNewLine(buf, "} ");
 		addNewLine(buf, ",{");
@@ -1585,15 +1585,17 @@ public class TagLibSearch extends TagLibSuperDB {
 		addNewLine(buf, "  format    : '"+super.getHoConfig().getDateFormatMapJS(super.getHoParameter().getDefaut("DateFormat"))+"',");
 		addNewLine(buf, "  altFormats    : '"+ super.getHoConfig().getDateAltFormatMapJS(super.getHoParameter().getDefaut("DateFormat"))+"',");		
 		addNewLine(buf, "  id: 'id_" + name + "_end_dt',");	
-		addNewLine(buf, "  startDateField: 'id_" + name + "_start_dt' ,");	
+		addNewLine(buf, "  startField: 'id_" + name + "_start_dt' ,");	
 		addNewLine(buf, "  value     : '" + endValue + "' ");
 		addNewLine(buf, "}  ");
+		/*
 		addNewLine(buf, ",{");
 		addNewLine(buf, " xtype : 'label',");
 		addNewLine(buf, " text : ' ', ");
 		addNewLine(buf, " width : 117  ");
 		addNewLine(buf, " }");
 		//addNewLine(buf, "] }");
+		 */
 		
 //		addNewLine(buf, ", new Ext.CycleButton({                               ");
 //		addNewLine(buf, "    showText: true,                                 ");
@@ -1963,7 +1965,7 @@ public class TagLibSearch extends TagLibSuperDB {
 		this.defaultValue = defaultValue;
 	}
 	public int getWidth() {
-		return width;
+		return width+90;
 	}
 
 

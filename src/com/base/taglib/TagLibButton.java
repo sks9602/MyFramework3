@@ -236,9 +236,20 @@ public class TagLibButton extends TagLibSuperDB
     	String language = locale.getLanguage();
 
 		StringBuffer buf = new StringBuffer();
-		
-		addNewLine(buf, " var btnPanel = new Ext.Panel({");
-		addNewLine(buf, " renderTo : 'button', ");
+
+		if( getCurrentIndex("SEARCH_TD") <= getSearchMaxTdCnt() ) {
+			// addNewLine(buf, "]} ");	 // close compositefield
+			addNewLine(buf, " ] } // 3");	
+			
+			initIndex("SEARCH_TD");
+			initIndex("SEARCH_TD_CNT");
+			increaseIndex("SEARCH_TR");
+		}
+		addNewLine(buf, " ] } ]  ");
+
+		addNewLine(buf, " , ");
+		addNewLine(buf, " buttons : [ ");
+		/*
 		//addNewLine(buf, " header : false, ");
 		//addNewLine(buf, " footer : false, ");
 		//addNewLine(buf, " frame : false, ");
@@ -249,20 +260,21 @@ public class TagLibButton extends TagLibSuperDB
 		addNewLine(buf, " layout : 'hbox', ");
 		addNewLine(buf, " layoutConfig : { align: 'right', pack : 'end' }, ");
 		addNewLine(buf, " itemCls : 'ux-search-button',");
-		addNewLine(buf, " items : [");
+		*/
+		//addNewLine(buf, " items : [");
 		for( int i=0 ; i<list.size() ; i++ ) {
 			if( i > 0 ) {
 				addNewLine(buf, " , ");
-				addNewLine(buf, "new Ext.Spacer({width:5}), ");
 			} 
-			addNewLine(buf, " new Ext.Button({");
+			addNewLine(buf, " {");
 			addNewLine(buf, " text : '"+list.getString(i,"BTN_NM_"+language)+"', ");
 			addNewLine(buf, " handler : "+list.getString(i,"BTNFUNC")+", ");
 			addNewLine(buf, " iconCls : 'btn_"+list.getString(i,"BTN_CSS")+"', ");
-			addNewLine(buf, " tooltip : '"+list.getString(i,"TOOLTIP"+language)+"' ");
-			addNewLine(buf, "})");
+			addNewLine(buf, " tooltip : '"+list.getString(i,"BTN_NM_"+language)+ " : " + list.getString(i,"TOOLTIP"+language)+"' ");
+			addNewLine(buf, "}");
 		}
-		addNewLine(buf, " ]});");
+		//addNewLine(buf, " ]");
+		addNewLine(buf, " ]");
 		
 		out.print( buf.toString() );
 	}

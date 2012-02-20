@@ -84,23 +84,38 @@ public class TagLibForm extends TagLibSuperDB {
 	public void doStartSearchForm(JspWriter out) throws Exception {
 		StringBuffer buf = new StringBuffer();
 		
-		addNewLine(buf, "        var "+getRenderTo()+"form = new Ext.form.FormPanel({                                           ");
-		addNewLine(buf, "        	unstyled: true,                                                                    ");
-		addNewLine(buf, "            autoHeight: true,                                                                 ");
+		String labelWidth = "90";
+		
+		addNewLine(buf, "        var "+getRenderTo()+"form = Ext.widget('form', {                                          ");
+		addNewLine(buf, "        	unstyled: true,    border: false,   bodyBorder: false,   autoHeight: true,   bodyPadding: 0, ");
 		addNewLine(buf, "            renderTo : '"+getRenderTo()+"',                        ");
 		addNewLine(buf, "            name : '"+ getName() +"Form',                                ");
 		addNewLine(buf, "            width   : "+ getWidth() +",                                     ");
 		addNewLine(buf, "            bodyStyle: '"+ getBodyStyle() +"', ");
-		addNewLine(buf, "            footer : false, ");
+		addNewLine(buf, "            fieldDefaults: {         ");  
+		addNewLine(buf, "            	labelAlign: 'right',  ");
+		addNewLine(buf, "               msgTarget: 'qtip',   ");
+		addNewLine(buf, "               labelWidth: "+labelWidth+"      ");
+		addNewLine(buf, "            },                       ");
 		addNewLine(buf, "            submit: function() {                                                              ");
 		addNewLine(buf, "            	fs_Search("+getRenderTo()+"form , '"+ getTarget() +"');                                      ");
 		addNewLine(buf, "            } ,                                                             ");
-		addNewLine(buf, "            items   : [{xtype : 'fieldset',                                                   ");
-		addNewLine(buf, "                		width : "+(getWidth()-10)+",                                           ");
-		addNewLine(buf, "                        collapsible: true,                                                    ");
+		addNewLine(buf, "            items   : [{xtype : 'uxfieldset',                                                   ");
+		addNewLine(buf, "                		 width : "+(getWidth()-10)+",                                           ");
+		addNewLine(buf, "                        collapsible: true,   layout: 'anchor',                                ");
 		addNewLine(buf, "                        title: '검색 조건',                                                   ");
-		addNewLine(buf, "                        listeners : {scope : this, collapse : onFieldSetCollapse , expand : onFieldSetExpand } ,   ");
-		addNewLine(buf, "                		items : [                                                              ");
+		addNewLine(buf, "                        listeners : { aftercollapse : { fn : onFieldSetCollapse } , afterexpand : { fn : onFieldSetExpand } } ,   ");
+		addNewLine(buf, "                        defaults: {                                                            ");
+		addNewLine(buf, "                                  anchor: '100%',                                              ");
+		addNewLine(buf, "  			                       labelAlign: 'right',                                         ");
+		addNewLine(buf, "                                  // hideLabel: false,                                         ");
+		addNewLine(buf, "                                  labelWidth: "+labelWidth+" ,                                 ");
+		addNewLine(buf, "                                  layout: {                                                    ");
+		addNewLine(buf, "                                  		type: 'hbox',                                            ");
+		addNewLine(buf, "                                  		defaultMargins: {top: 0, right: 5, bottom: 0, left: 0}   ");
+		addNewLine(buf, "                         			}                                                            ");
+		addNewLine(buf, "                        },                                                                 ");
+		addNewLine(buf, "                		items : [                                                           ");
 
 		out.print( buf.toString() );
 		
@@ -118,35 +133,64 @@ public class TagLibForm extends TagLibSuperDB {
 		System.out.println( " model :" + model);
 		
 		HoList list = super.getHoModel().getHoList(model);
+		System.out.println( " list :" + list );
+		
+		addNewLine(buf, "Ext.define('GridData', { ");
+		addNewLine(buf, " 	extend: 'Ext.data.Model',");
+		addNewLine(buf, " 	fields: ["+ list.getMetaDataString("name") +"]");
+		addNewLine(buf, "}); ");
+		
 
-		addNewLine(buf, " var "+getRenderTo()+"_store = new Ext.data.JsonStore({                         ");
-		addNewLine(buf, "            root: 'datas',                                            ");
-		addNewLine(buf, "            totalProperty: 'totalCount',                               ");
-		addNewLine(buf, "            idProperty: 'threadid',                                    ");
-		addNewLine(buf, "            remoteSort: true,                                          ");
-		addNewLine(buf, "                                                                       ");
-		addNewLine(buf, "            fields: ["+ list.getMetaDataString() +" ],                  ");
-
-		addNewLine(buf, "                                                                       ");
-		addNewLine(buf, "            proxy: new Ext.data.ScriptTagProxy({                       ");
-		addNewLine(buf, "                url: '"+getAction()+"' ");
-		addNewLine(buf, "                                                                       ");
-		addNewLine(buf, "            })                                                         ");
+		addNewLine(buf, " var "+getRenderTo()+"_store = Ext.create('Ext.data.Store', {         ");
+		addNewLine(buf, "            model: 'GridData',                                            ");
+		addNewLine(buf, "            proxy: {                       ");
+		addNewLine(buf, "                simpleSortMode: true,      ");
+		addNewLine(buf, "                type: 'jsonp',             ");
+		addNewLine(buf, "                api : {                    ");
+		addNewLine(buf, "                      read   : '"+getAction()+"', ");
+		addNewLine(buf, "                      create   : '"+getAction()+"' ");
+		addNewLine(buf, "                } ,                        ");
+		addNewLine(buf, "                reader : {                 ");
+		addNewLine(buf, "                      root : 'datas', totalProperty: 'totalCount'  ");
+		addNewLine(buf, "                } ,                        ");
+		addNewLine(buf, "                writer : {                 ");
+		addNewLine(buf, "                      root : 'datas', type: 'json', writeAllFields: false ");
+		addNewLine(buf, "                } ,                        ");
+		addNewLine(buf, "	             listeners: {                                              ");
+		addNewLine(buf, "	                 exception: function(proxy, response, operation){      ");
+		addNewLine(buf, "	                     Ext.MessageBox.show({                             ");
+		addNewLine(buf, "	                         title: 'ERROR',                               ");
+		addNewLine(buf, "	                         msg: operation.getError(),                    ");
+		addNewLine(buf, "	                         icon: Ext.MessageBox.ERROR,                   ");
+		addNewLine(buf, "	                         buttons: Ext.Msg.OK                           ");
+		addNewLine(buf, "	                     });                                               ");
+		addNewLine(buf, "	                 } ,                                                   ");
+		addNewLine(buf, "	                 success: function(proxy, response, operation){        ");
+		addNewLine(buf, "	                     Ext.MessageBox.show({                             ");
+		addNewLine(buf, "	                         title: 'SUCCESS',                             ");
+		addNewLine(buf, "	                         msg: operation.getError(),                    ");
+		addNewLine(buf, "	                         icon: Ext.MessageBox.INFO,                   ");
+		addNewLine(buf, "	                         buttons: Ext.Msg.OK                           ");
+		addNewLine(buf, "	                     });                                               ");
+		addNewLine(buf, "	                 } 	                                                   ");
+		addNewLine(buf, "	             }                                                         ");		
+		addNewLine(buf, "            }                                                          ");
 		addNewLine(buf, "        });                                                            ");
 
-		addNewLine(buf, "        var "+getRenderTo()+" = new Ext.grid.EditorGridPanel({  ");
+		addNewLine(buf, "        var "+getRenderTo()+" = Ext.create('Ext.grid.Panel', {  ");
 		addNewLine(buf, "        	id : 'data_"+getRenderTo()+"',                 ");
+		addNewLine(buf, "            renderTo : '"+getRenderTo()+"',  ");
 		addNewLine(buf, "            store: "+getRenderTo()+"_store,                ");
-		addNewLine(buf, "            clicksToEdit: 1,                ");
-		addNewLine(buf, "            trackMouseOver:false,            ");
-		addNewLine(buf, "            disableSelection:true,           ");
+		//addNewLine(buf, "            trackMouseOver:false,            ");
+		// addNewLine(buf, "            disableSelection:true,           ");
 		addNewLine(buf, "            loadMask: true,                  ");
-		addNewLine(buf, "            stripeRows: true,               ");
+		//addNewLine(buf, "            stripeRows: true,               ");
+		addNewLine(buf, "            height: 600,             ");
 		addNewLine(buf, "            style: { marginLeft: '5px' },    ");
 		if( getLock().equals("Y")) {
-			addNewLine(buf, "        colModel: new Ext.ux.grid.LockingColumnModel ({   ");			
+			// addNewLine(buf, "        colModel: new Ext.ux.grid.LockingColumnModel ({   ");			
 		} else {
-			addNewLine(buf, "        colModel: new Ext.grid.ColumnModel({   ");			
+			//addNewLine(buf, "        colModel: Ext.create('Ext.grid.ColumnModel', {   ");			
 		}
 		addNewLine(buf, "            defaults: { width: 100,  sortable: true },   ");			
 		addNewLine(buf, "            columns:[                        ");			
@@ -164,7 +208,8 @@ public class TagLibForm extends TagLibSuperDB {
 	public void doEndSearchForm(WebApplicationContext ctx, JspWriter out) throws Exception {
 		 
 		StringBuffer buf = new StringBuffer();
-		
+
+		/*
 		if( getCurrentIndex("SEARCH_TD") <= getSearchMaxTdCnt() ) {
 			// addNewLine(buf, "]} ");	 // close compositefield
 			addNewLine(buf, " ] } // 3");	
@@ -173,18 +218,17 @@ public class TagLibForm extends TagLibSuperDB {
 			initIndex("SEARCH_TD_CNT");
 			increaseIndex("SEARCH_TR");
 		}
-		
 		addNewLine(buf, " ] } ]  ");
+		*/
 		addNewLine(buf, " }); ");
 
-		addNewLine(buf, "");
 		addNewLine(buf, "");
 		
 		addNewLine(buf, " function fs_"+type+"FormValidation() { ");
 		addNewLine(buf, " if ( !"+type+"form.form.isValid()) {                                                                                          ");
         addNewLine(buf, "   	for( var i=0 ; i < "+type+"form.form.items.length ; i++ ) {                                                             ");
         addNewLine(buf, "                                                                                                                      ");
-		addNewLine(buf, " 		if( "+type+"form.form.items.itemAt(i).getXType() == 'compositefield' ) {                                                ");
+		addNewLine(buf, " 		if( "+type+"form.form.items.itemAt(i).getXType() == 'fieldcontainer' ) {                                                ");
 		addNewLine(buf, " 			for( var j=0 ; j < "+type+"form.form.items.itemAt(i).items.length ; j++ ) {                                         ");
         addNewLine(buf, "                                                                                                                      ");
         addNewLine(buf, "                                                                                                                      ");
@@ -219,26 +263,23 @@ public class TagLibForm extends TagLibSuperDB {
 	public void doEndGridForm(WebApplicationContext ctx, JspWriter out) throws Exception {
 		StringBuffer buf = new StringBuffer();
 
-		addNewLine(buf, "            ]  ");
-		addNewLine(buf, "            }), ");
+		addNewLine(buf, "            ],  ");
+		// addNewLine(buf, "            }), ");
 		
-		if( super.getAttribute("USE_SM")!=null && super.getAttribute("USE_SM").equals("Y")) {
-			addNewLine(buf, " sm: sm, ");
-		}
 
 		if( super.getAttribute(type.toUpperCase()+"EXPAND")!=null) {
-			addNewLine(buf, " autoExpandColumn: '"+super.getAttribute(type.toUpperCase()+"EXPAND")+"', ");
+			// addNewLine(buf, " autoExpandColumn: '"+super.getAttribute(type.toUpperCase()+"EXPAND")+"', ");
 		}
 		
 		if( getLock().equals("Y")) {
-			addNewLine(buf, "        view: new Ext.ux.grid.LockingGridView() ,  ");			
+			// addNewLine(buf, "        view: new Ext.ux.grid.LockingGridView() ,  ");			
 		} 
-		addNewLine(buf, "            tbar: tbar,                         ");
+		// addNewLine(buf, "            tbar: tbar,                         ");
 
-		addNewLine(buf, "            bbar:                                                      ");
-		addNewLine(buf, "new Ext.ux.PagingToolbar({                                              ");
-		//addNewLine(buf, "        gridId : 'data_"+getRenderTo()+"',                             ");
-		// addNewLine(buf, "        headerRowspan : headerRowspan,                                  ");
+		if( super.getAttribute("USE_SM")!=null && super.getAttribute("USE_SM").equals("Y")) {
+			addNewLine(buf, " selModel : sm, ");
+		}
+		addNewLine(buf, "            bbar:  Ext.create('Ext.ux.GridPaging', {                     ");
 		addNewLine(buf, "        pageSize: 20,                                                   ");
 		addNewLine(buf, "        store: "+getRenderTo()+"_store ,                                ");
 		addNewLine(buf, "        displayInfo: true,                                              ");
@@ -250,7 +291,7 @@ public class TagLibForm extends TagLibSuperDB {
 		addNewLine(buf, "            plugins: [                                     ");
 		
 		int plugin = 0;
-		addNewLine(buf, "            grid_fit   ");
+		addNewLine(buf, "            grid_fit ");//, Ext.create('Ext.grid.plugin.CellEditing', {clicksToEdit: 1})   ");
 		plugin ++;
 		
 		if (super.getAttribute("USE_EXPANDER")!= null ) {
@@ -262,7 +303,6 @@ public class TagLibForm extends TagLibSuperDB {
 		addNewLine(buf, "            ]                                     ");
 		addNewLine(buf, "        });                                                         ");
 
-		addNewLine(buf, " "+getRenderTo()+".render('"+getRenderTo()+"'); ");
 		// addNewLine(buf, " "+getRenderTo()+"_store.load({params: "+ getTarget() +"form.getForm().getValues() }); ");
 		
 		out.print( buf.toString() );

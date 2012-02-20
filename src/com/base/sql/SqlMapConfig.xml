@@ -35,5 +35,7 @@
 			<mapper resource="/com/base/manage/program/sql/Button.xml"/>
 			<mapper resource="/com/base/manage/program/sql/MenuMng.xml"/>
 			<mapper resource="/com/base/manage/program/sql/Page.xml"/>
+			
+			<mapper resource="/com/base/system/sql/DataBase.xml"/>
 			</mappers>
 	</configuration>

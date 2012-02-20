@@ -6,8 +6,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -15,12 +15,17 @@ import java.util.TimerTask;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.builder.xml.XMLMapperEntityResolver;
+import org.apache.ibatis.executor.ErrorContext;
+import org.apache.ibatis.parsing.XNode;
+import org.apache.ibatis.parsing.XPathParser;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.orm.ibatis.SqlMapClientFactoryBean;
+import org.springframework.core.io.UrlResource;
 
 import edu.emory.mathcs.backport.java.util.concurrent.locks.Lock;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -81,10 +86,11 @@ public class RefreshableSqlSessionFactoryBean extends SqlSessionFactoryBean
 	private Timer timer;
 	private TimerTask task;
 	
-	private Resource[] configLocations;
-	
-	private Resource[] mappingLocations;
-	
+    private Resource configLocation;
+    private Resource [] mapperLocations;
+
+    private List resouces = new ArrayList();
+
 	/**
 	 * 파일 감시 쓰레드가 실행중인지 여부.
 	 */
@@ -93,22 +99,21 @@ public class RefreshableSqlSessionFactoryBean extends SqlSessionFactoryBean
 	private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 	private final Lock r = rwl.readLock();
 	private final Lock w = rwl.writeLock();
-	
-	public void setConfigLocation(Resource configLocation) {
-		super.setConfigLocation(configLocation);
-		this.configLocations = (configLocation != null ? new Resource[] { configLocation } : null);
-	}
-	
-	public void setConfigLocations(Resource[] configLocations) {
-		//super.setConfigLocations(configLocations);
-		this.configLocations = configLocations;
-	}
-	
-	public void setMappingLocations(Resource[] mappingLocations) {
-		//super.setMappingLocations(mappingLocations);
-		this.mappingLocations = mappingLocations;
-	}
-	
+
+    public void setConfigLocation(Resource configLocation)
+    {
+    	super.setConfigLocation(configLocation);
+        this.configLocation = configLocation;
+    }
+
+    public void setMapperLocations(Resource mapperLocations[])
+    {
+    	super.setMapperLocations(mapperLocations);
+        this.mapperLocations = mapperLocations;
+    }
+
+    
+    
 	/**
 	 * iBATIS 설정을 다시 읽어들인다.<br /> SqlMapClient 인스턴스 자체를 새로 생성하여 교체한다.
 	 * 
@@ -116,7 +121,7 @@ public class RefreshableSqlSessionFactoryBean extends SqlSessionFactoryBean
 	 */
 	public void refresh() throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("refreshing sqlMapClient.");
+			logger.info("Refreshing SqlSession.");
 		}
 		/*
 		 * WRITE LOCK.
@@ -136,11 +141,39 @@ public class RefreshableSqlSessionFactoryBean extends SqlSessionFactoryBean
 	public void afterPropertiesSet() throws Exception {
 		super.afterPropertiesSet();
 		
+		getResouces();
+		
 		setRefreshable();
 	}
 	
+	
+	public void getResouces() throws IOException {
+		
+		if( configLocation!=null ) {
+			XPathParser parser = new XPathParser( configLocation.getInputStream(), true, null, new XMLMapperEntityResolver());
+			
+			XNode parent = parser.evalNode("/configuration").evalNode("mappers");
+
+			for(Iterator iterator = parent.getChildren().iterator(); iterator.hasNext();) {
+                XNode child = (XNode)iterator.next();
+                String resource = child.getStringAttribute("resource");
+                String url = child.getStringAttribute("url");
+                if(resource != null && url == null) {
+                    ErrorContext.instance().resource(resource);
+                    this.resouces.add(new ClassPathResource(resource));
+                } else if(url != null && resource == null){
+                    ErrorContext.instance().resource(url);
+                    this.resouces.add(new UrlResource(resource));
+                } 
+            }
+		}	
+	}
+	
 	private void setRefreshable() {
-		proxy = (SqlSessionFactory) Proxy.newProxyInstance(SqlSessionFactory.class.getClassLoader(), new Class[] { SqlSessionFactory.class, ExtendedSqlMapClient.class }, new InvocationHandler() {
+		proxy = (SqlSessionFactory) Proxy.newProxyInstance(
+				SqlSessionFactoryBean.class.getClassLoader(), 
+				new Class[] { SqlSessionFactory.class} , // DefaultSqlSessionFactory.class }, 
+				new InvocationHandler() {
 			
 			public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {
@@ -151,39 +184,33 @@ public class RefreshableSqlSessionFactoryBean extends SqlSessionFactoryBean
 		});
 		
 		task = new TimerTask() {
+		private Map map = new HashMap();
 			
-			private Map map = new HashMap();
+		public void run() {
 			
-			public void run() {
-				
-				if (isModified()) {
-					try {
-						refresh();
-					}
-					catch (Exception e) {
-						logger.error("caught exception", e);
-					}
+			if (isModified()) {
+				try {
+					refresh();
 				}
-				
+				catch (Exception e) {
+					logger.error("caught exception", e);
+				}
 			}
 			
-			private boolean isModified() {
-				boolean retVal = false;
-				
-				for (int i = 0; i < configLocations.length; i++) {
-					Resource configLocation = configLocations[i];
-					retVal |= findModifiedResource(configLocation);
-				}
-				
-				if (mappingLocations != null) {
-					for (int i = 0; i < mappingLocations.length; i++) {
-						Resource mappingLocation = mappingLocations[i];
-						retVal |= findModifiedResource(mappingLocation);
-					}
-				}
-				
-				return retVal;
+		}
+		
+		
+			
+		private boolean isModified() {
+			boolean retVal = false;
+			
+			for (int i = 0; i < resouces.size(); i++) {
+				Resource resouce = (Resource) resouces.get(i);
+				retVal |= findModifiedResource(resouce);
 			}
+
+			return retVal;
+		}
 			
 			private boolean findModifiedResource(Resource resource) {
 				boolean retVal = false;
@@ -222,53 +249,8 @@ public class RefreshableSqlSessionFactoryBean extends SqlSessionFactoryBean
 		
 		timer = new Timer(true);
 		resetInterval();
+	}
 		
-		
-		List mappingLocationList = extractMappingLocations(configLocations);
-		
-		if (this.mappingLocations != null) {
-			mappingLocationList.addAll(Arrays.asList(this.mappingLocations));
-		}
-		this.mappingLocations = (Resource[]) mappingLocationList.toArray(new Resource[0]);
-	}
-	
-	private List extractMappingLocations(Resource[] configLocations) {
-		List mappingLocationList = new ArrayList();
-		SqlMapExtractingSqlMapConfigParser configParser = new SqlMapExtractingSqlMapConfigParser();
-		for (int i = 0; i < configLocations.length; i++) {
-			try {
-				InputStream is = configLocations[i].getInputStream();
-				mappingLocationList.addAll(configParser.parse(is));
-			}
-			catch (IOException ex) {
-				logger.warn("Failed to parse config resource: "
-						+ configLocations[i], ex.getCause());
-			}
-		}
-		return mappingLocationList;
-	}
-
-	private Object getParentObject() {
-		/*
-		 * READ LOCK.
-		 */
-		r.lock();
-		try {
-			return super.getObject();
-			
-		} finally {
-			r.unlock();
-		}
-	}
-	
-	public Object getObject() {
-		return this.proxy;
-	}
-	
-	public Class getObjectType() {
-		return (this.proxy != null ? this.proxy.getClass() : SqlSessionFactory.class);
-	}
-	
 	public boolean isSingleton() {
 		return true;
 	}
@@ -296,6 +278,27 @@ public class RefreshableSqlSessionFactoryBean extends SqlSessionFactoryBean
 		timer.cancel();
 	}
 	
+	public SqlSessionFactory getObject() {
+		logger.info("this.proxy.getClass().getName() : " + this.proxy.getClass().getName());
+		return (SqlSessionFactory)this.proxy;
+	}
+	
+	public Class getObjectType() {
+		return (this.proxy != null ? this.proxy.getClass() : SqlSessionFactory.class);
+	}
+	
+	private Object getParentObject() throws Exception {
+		/*
+		 * READ LOCK.
+		 */
+		r.lock();
+		try {
+			return super.getObject();
+			
+		} finally {
+			r.unlock();
+		}
+	}
 }
 
 

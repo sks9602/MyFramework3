@@ -5,11 +5,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,100 +27,7 @@ public class HoUtil
 	
 
 	
-	/**
-	 * <pre>
-	 * YYYYMMDD형태를 YYYY-MM-DD형태로 변경한다.
-	 * </pre>
-	 * @param yyyymmdd
-	 * @return
-	 * @exception
-	 * @see
-	 */
-	public static String toYmdFormat(String yyyymmdd) {
-		HashMap format = new HashMap();
-		
-		format.put("YMDHMS", "yyyy-MM-dd a hh:mm:ss");
-		format.put("YMDHM", "yyyy-MM-dd a hh:mm");
-		format.put("YMD", "yyyy-MM-dd");
-		format.put("YM", "yyyy-MM");
-		format.put("Y", "yyyy");
-		return toYmdFormat(yyyymmdd, format);
-	}
-	
-	/**
-	 * <pre>
-	 * YYYYMMDD형태를 YYYY-MM-DD[hh:mi:ss]형태로 변경한다.
-	 * </pre>
-	 * @param yyyymmdd
-	 * @return
-	 * @throws ParseException 
-	 * @exception
-	 * @see
-	 */
-	public static String toYmdFormat( String yyyymmdd, HashMap format )
-	{
-		try {
-			SimpleDateFormat sdf = null;
-			Date date = null;
-			// 길이가 14일경우에는 yyyy-MM-dd hh24:mi:ss
-			if( yyyymmdd.length() == 14 ) {
-				sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-				date = sdf.parse(yyyymmdd);
-				return (new SimpleDateFormat((String) format.get("YMDHMS"))).format(date);
-			} 
-			// 길이가 12일경우에는 yyyy-MM-dd hh24:mi
-			else if( yyyymmdd.length() == 12 ) {
-				sdf = new SimpleDateFormat("yyyyMMddHHmm");
-				date = sdf.parse(yyyymmdd);
-				return (new SimpleDateFormat((String) format.get("YMDHM"))).format(date);
-			}
-			// 길이가 8일경우에는 yyyy-MM-dd
-			else if( yyyymmdd.length() == 8 ) {
-				sdf = new SimpleDateFormat("yyyyMMdd");
-				date = sdf.parse(yyyymmdd);
-				return (new SimpleDateFormat((String) format.get("YMD"))).format(date);
-			} 
-			// 길이가 6일경우에는 yyyy-MM
-			else if( yyyymmdd.length() == 6 ){
-				sdf = new SimpleDateFormat("yyyyMM");
-				date = sdf.parse(yyyymmdd);
-				return (new SimpleDateFormat((String) format.get("YM"))).format(date);
-			} 
-			// 길이가 4일경우에는 yyyy
-			else if( yyyymmdd.length() == 4 ){
-				sdf = new SimpleDateFormat("yyyyMM");
-				date = sdf.parse(yyyymmdd);
-				return (new SimpleDateFormat((String) format.get("Y"))).format(date);
-			} else {
-				return yyyymmdd;
-			}
-		} catch(Exception e) {
-			return yyyymmdd;
-		}
-		
-	}
 
-	/**
-	 * Date 를 SimpleDateFormat 문자열로 반환한다.
-	 * @param date
-	 * @param format
-	 * @return
-	 */
-	public static String toYmdFormat(Date date,String format)   {
-		return (new SimpleDateFormat(format)).format(date);
-	}
-	/**
-	 * Date 를 SimpleDateFormat(yyyy-MM-dd) 문자열로 반환한다.
-	 * @param date
-	 * @return
-	 */
-	public static String toYmdFormat(Date date)   {
-		return toYmdFormat(date,"yyyy-MM-dd");
-	}
-
-	public static String toYmdFormat()   {
-		return (new SimpleDateFormat("yyyy-MM-dd")).format(new Date());
-	}
 
 	public static String getNow()   {
 		return (new SimpleDateFormat("yyyyMMddHHmmss")).format(new Date());
@@ -319,58 +224,7 @@ public class HoUtil
 		return val;
 	}
 	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
-	public static String toCurrencyFormat( Object number )
-	{
-		java.math.BigDecimal value = new java.math.BigDecimal( number.toString() );
-		return toCurrencyFormat( value, "###,###,###,###,###,###,###" );
-	}
 
-	public static String toCurrencyFormat( Object number, String format )
-	{
-		java.text.DecimalFormat df = new java.text.DecimalFormat( format );
-		String value = null;
-		
-		try {
-			value = df.format( number );
-		}
-		catch( Exception e )
-		{
-			value = "0";
-		}
-		
-		return value;
-	}
-
-	public static String toNumberRawFormat( Double number )
-	{
-		return toCurrencyFormat( number, "#####################.###" );
-	}
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
-	public static String toPointFormat( Object number )
-	{
-		java.math.BigDecimal value = new java.math.BigDecimal( number.toString() );
-		return toPointFormat( value, "###,###,###,###,###,###,###.000" );
-	}
-
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
-	public static String toPointFormat( Object number, String format )
-	{
-		java.math.BigDecimal value = new java.math.BigDecimal( number.toString() );
-		return toCurrencyFormat( value, format );
-	}
 
 	
 	public static String rPad( String src, int size, String padStr )
@@ -929,27 +783,6 @@ public class HoUtil
 		return str.replaceAll("(?i)" + pattern, replace );
 	}
 	
-	public static String getCurrencyFormat( Object number )
-	{
-		java.math.BigDecimal value = new java.math.BigDecimal( number.toString() );
-		return getCurrencyFormat( value, "###,###,###,###,###,###,###" );
-	}
-
-	public static String getCurrencyFormat( Object number, String format )
-	{
-		java.text.DecimalFormat df = new java.text.DecimalFormat( format );
-		String value = null;
-		
-		try {
-			value = df.format( number );
-		}
-		catch( Exception e )
-		{
-			value = "0";
-		}
-		
-		return value;
-	}
 	
 	public static String getStringForCLOB(java.sql.Clob clob) {
 		return getStringForCLOB(clob, false);

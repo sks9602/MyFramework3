@@ -15,5 +15,5 @@
 	
 	<mappers>
 		<mapper resource="/com/base/system/sql/DataBase.xml"/>
-			</mappers>
-	</configuration>
+	</mappers>
+</configuration>

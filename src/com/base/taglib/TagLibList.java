@@ -39,7 +39,7 @@ public class TagLibList extends TagLibSuperDB
 		
 		String parentType = ((TagLibForm)super.getParent()).getType();
 		
-		if(getCurrentIndex(parentType) > 0 ) {
+		if( ! type.startsWith("checkbox") && getCurrentIndex(parentType) > 0 ) {
 			addNewLine(buf, ",  ");
 		} 
 		
@@ -61,13 +61,15 @@ public class TagLibList extends TagLibSuperDB
 		}
 		out.print( buf.toString() );
 		
-		increaseIndex(((TagLibForm)super.getParent()).getType());
+		if( ! type.startsWith("checkbox")) {
+			increaseIndex(((TagLibForm)super.getParent()).getType());
+		}
 		
 		return EVAL_BODY_INCLUDE;
 	}
 
 	public void doCheckbox(String parentType, StringBuffer buf) {
-		addNewLine(buf, " sm"+type.replaceAll("checkbox", ""));
+		// addNewLine(buf, " sm"+type.replaceAll("checkbox", ""));
 		
 		super.setAttribute("USE_SM", "Y");
 	}
@@ -86,17 +88,21 @@ public class TagLibList extends TagLibSuperDB
 
 	public void doColumn(WebApplicationContext ctx, String parentType, StringBuffer buf) {
 		addNewLine(buf, "{  ");
-		addNewLine(buf, "  header : '"+ this.getTitleText()+"', ");
+		addNewLine(buf, "  text : '"+ this.getTitleText()+"', ");
 		addNewLine(buf, "  id : 'id_" +parentType + "_" + this.getColumn()+"', ");
 		addNewLine(buf, "  dataIndex : '"+ this.getColumn()+"', ");
-		addNewLine(buf, "  width : "+ this.getWidth()+", ");
-		addNewLine(buf, "  hidden : "+ this.getHidden()+", ");
+		if( this.getExpand().equals("Y")) {
+			addNewLine(buf, "  flex: "+(getCurrentIndex(parentType)+1) +" , ");
+		} else {
+			addNewLine(buf, "  width : "+ this.getWidth()+", ");
+		}
+		// addNewLine(buf, "  hidden : "+ this.getHidden()+", ");
 		addNewLine(buf, "  align : 'center', ");
-		addNewLine(buf, "  locked : "+ this.getLock()+", ");
-		addNewLine(buf, "  renderer : "+ this.getRenderer()+", ");
-		addNewLine(buf, "  sort   : "+ this.getSort()+", ");
-		addNewLine(buf, "  resizable : "+ this.getResize()+", ");
-		addNewLine(buf, "  tooltip   : '"+ (this.getSort().equals("true") ? "[정렬가능] " : "[정렬불가] ") + this.getAlt(ctx) + "' ");
+		// addNewLine(buf, "  locked : "+ this.getLock()+", ");
+		addNewLine(buf, "  renderer : "+ this.getRenderer()+" ");
+		//addNewLine(buf, "  sort   : "+ this.getSort()+", ");
+		//addNewLine(buf, "  resizable : "+ this.getResize()+", ");
+		// addNewLine(buf, "  tooltip   : '"+ (this.getSort().equals("true") ? "[정렬가능] " : "[정렬불가] ") + this.getAlt(ctx) + "' ");
 		addNewLine(buf, "}  ");
 		
 	}

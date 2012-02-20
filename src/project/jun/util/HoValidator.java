@@ -1,5 +1,6 @@
 package project.jun.util;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -368,11 +369,14 @@ public class HoValidator extends GenericValidator {
 	
 	
 	public static void main(String [] args) {
-		
+
+		System.out.println( DateFormat.getDateInstance(3, Locale.getDefault()).format(new Date()) );
+
 		System.out.println( "20101231 -> " + HoValidator.isDate("20101231"));
 		System.out.println( "20101234 -> " + HoValidator.isDate("20101234"));
 		System.out.println( "20101231 -> " + HoValidator.isDate("20101231", Locale.getDefault()));
 		System.out.println( "20101234 -> " + HoValidator.isDate("20101234", Locale.getDefault()));
+		
 
 		System.out.println( "2010년12월31일 -> " + HoValidator.isDate("2010년12월31일", Locale.getDefault()));
 		System.out.println( "2010년12월34일 -> " + HoValidator.isDate("2010년12월34일", Locale.getDefault()));
@@ -397,7 +401,7 @@ public class HoValidator extends GenericValidator {
 
 		System.out.println( "-------------------------" );
 		
-		System.out.println("a \r\n a b \r \n ]->" + "a \r\n a b \r \n ]".replaceAll("[ \r\n]*", "") );
+		System.out.println("----a \r\n a b \r \n ]-----" + "a \r\n a b \r \n ]".replaceAll("[ \r\n]*", "") );
 
 		System.out.println("a \r\n a b \r \n]->" + HoValidator.isDummy("a \r\n a b \r \n]") );
 		System.out.println(" \r\n  \r \n->" + HoValidator.isDummy(" \r\n  \r \n") );
