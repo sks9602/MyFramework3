@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans default-lazy-init="true" >
+	<import resource="./applicationContext.xml"/>
+	<import resource="./applicationContextDelegate-jdbc.xml"/>
+
+    <!-- View Resolver for JSPs -->
+    <bean id="viewJspResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+		<!--  property name="prefix" value="/hrdb/"/>
+		<property name="suffix" value=".jsp"/-->
+    </bean>
+	
+	<bean name="HoController" class="project.jun.was.spring.HoController" abstract="true">
+		<property name="hoConfig">
+			<ref bean="config"/>
+		</property>
+	</bean>
+	
+
+	<!--  화면 layout -->
+	<bean name="/itinAdminWebApp/system/dataBase.do" class="com.base.system.action.DataBaseAction"  parent="HoController" singleton="false" >
+		<property name="hoDelegate" ref="DataBaseDelegate"/>
+		<property name="defaultPageInfo" value="/jsp/common/system/DataBase.#p_action_flag#.jsp"/>
+	</bean>
+
+	
+</beans>
